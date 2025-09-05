@@ -1,8 +1,10 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 const config = require('./src/config');
 const apiRoutes = require('./src/api/routes');
+const googleAuthRoutes = require('./src/api/googleAuthRoutes');
 const adminRoutes = require('./src/routes/admin');
 const notificationRoutes = require('./src/routes/notifications');
 const healthRoutes = require('./src/routes/health');
@@ -11,12 +13,25 @@ const alphaFinder = require('./src/workers/alphaFinder');
 
 const app = express();
 
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 // Middleware
 app.use(express.json());
 app.use(cors());
 
 // API Routes
 app.use('/api', apiRoutes);
+app.use('/api/auth', googleAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/', healthRoutes);
