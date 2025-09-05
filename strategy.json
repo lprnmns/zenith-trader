@@ -1,0 +1,10 @@
+﻿{
+  "name": "Test Strat",
+  "walletAddress": "0xabc123",
+  "okxApiKey": "TEST",
+  "okxApiSecret": "TEST",
+  "okxPassphrase": "TEST",
+  "positionSize": 1,
+  "leverage": 1,
+  "allowedTokens": ["BTC", "ETH"]
+}

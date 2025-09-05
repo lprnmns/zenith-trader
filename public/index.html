@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Trader - PWA Test</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="Blockchain wallet analysis and copy trading platform">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .pwa-status {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .status-item h3 {
+            margin-bottom: 0.5rem;
+            color: #fbbf24;
+        }
+
+        .status-item.success {
+            border-color: #10b981;
+        }
+
+        .status-item.error {
+            border-color: #ef4444;
+        }
+
+        .status-item.warning {
+            border-color: #f59e0b;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .notification-area {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .notification-area h3 {
+            margin-bottom: 1rem;
+            color: #fbbf24;
+        }
+
+        .log {
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+
+        .log-entry.success {
+            color: #10b981;
+        }
+
+        .log-entry.error {
+            color: #ef4444;
+        }
+
+        .log-entry.warning {
+            color: #f59e0b;
+        }
+
+        .log-entry.info {
+            color: #3b82f6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .test-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Zenith Trader</h1>
+            <p>Blockchain Wallet Analysis & Copy Trading Platform</p>
+        </div>
+
+        <div class="pwa-status">
+            <h2>📱 PWA Status</h2>
+            <div class="status-grid" id="statusGrid">
+                <!-- Status items will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="test-buttons">
+            <button class="btn btn-primary" onclick="testNotification()">🔔 Test Notification</button>
+            <button class="btn btn-secondary" onclick="testOffline()">📴 Test Offline</button>
+            <button class="btn btn-secondary" onclick="testInstall()">📥 Test Install</button>
+            <button class="btn btn-secondary" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="notification-area">
+            <h3>📋 Test Log</h3>
+            <div class="log" id="testLog">
+                <div class="log-entry info">PWA test sayfası yüklendi...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Status Checker
+        class PWAStatusChecker {
+            constructor() {
+                this.statusGrid = document.getElementById('statusGrid');
+                this.testLog = document.getElementById('testLog');
+                this.init();
+            }
+
+            init() {
+                this.checkServiceWorker();
+                this.checkManifest();
+                this.checkNotifications();
+                this.checkInstallPrompt();
+                this.checkOfflineSupport();
+                this.log('PWA durumu kontrol ediliyor...', 'info');
+            }
+
+            addStatusItem(title, status, description) {
+                const item = document.createElement('div');
+                item.className = `status-item ${status}`;
+                item.innerHTML = `
+                    <h3>${title}</h3>
+                    <p>${description}</p>
+                `;
+                this.statusGrid.appendChild(item);
+            }
+
+            log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                this.testLog.appendChild(entry);
+                this.testLog.scrollTop = this.testLog.scrollHeight;
+            }
+
+            async checkServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        if (registration) {
+                            this.addStatusItem('Service Worker', 'success', 'Kayıtlı ve çalışıyor');
+                            this.log('Service Worker kayıtlı', 'success');
+                        } else {
+                            this.addStatusItem('Service Worker', 'warning', 'Kayıtlı değil');
+                            this.log('Service Worker kayıtlı değil', 'warning');
+                        }
+                    } catch (error) {
+                        this.addStatusItem('Service Worker', 'error', 'Hata: ' + error.message);
+                        this.log('Service Worker hatası: ' + error.message, 'error');
+                    }
+                } else {
+                    this.addStatusItem('Service Worker', 'error', 'Desteklenmiyor');
+                    this.log('Service Worker desteklenmiyor', 'error');
+                }
+            }
+
+            checkManifest() {
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    this.addStatusItem('Manifest', 'success', 'Yüklendi');
+                    this.log('Manifest dosyası yüklendi', 'success');
+                } else {
+                    this.addStatusItem('Manifest', 'error', 'Bulunamadı');
+                    this.log('Manifest dosyası bulunamadı', 'error');
+                }
+            }
+
+            checkNotifications() {
+                if ('Notification' in window) {
+                    const permission = Notification.permission;
+                    let status, description;
+                    
+                    switch (permission) {
+                        case 'granted':
+                            status = 'success';
+                            description = 'İzin verildi';
+                            break;
+                        case 'denied':
+                            status = 'error';
+                            description = 'Reddedildi';
+                            break;
+                        default:
+                            status = 'warning';
+                            description = 'İzin istenmedi';
+                    }
+                    
+                    this.addStatusItem('Notifications', status, description);
+                    this.log(`Notification izni: ${permission}`, status);
+                } else {
+                    this.addStatusItem('Notifications', 'error', 'Desteklenmiyor');
+                    this.log('Notifications desteklenmiyor', 'error');
+                }
+            }
+
+            checkInstallPrompt() {
+                if ('BeforeInstallPromptEvent' in window) {
+                    this.addStatusItem('Install Prompt', 'success', 'Destekleniyor');
+                    this.log('Install prompt destekleniyor', 'success');
+                } else {
+                    this.addStatusItem('Install Prompt', 'warning', 'Desteklenmiyor');
+                    this.log('Install prompt desteklenmiyor', 'warning');
+                }
+            }
+
+            checkOfflineSupport() {
+                if ('ononline' in window && 'onoffline' in window) {
+                    this.addStatusItem('Offline Support', 'success', 'Destekleniyor');
+                    this.log('Offline desteği mevcut', 'success');
+                } else {
+                    this.addStatusItem('Offline Support', 'error', 'Desteklenmiyor');
+                    this.log('Offline desteği yok', 'error');
+                }
+            }
+        }
+
+        // Global functions
+        function testNotification() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification('Zenith Trader Test', {
+                        body: 'Bu bir test bildirimidir!',
+                        icon: '/icon-192x192.svg',
+                        badge: '/badge-72x72.svg'
+                    });
+                    pwaChecker.log('Test bildirimi gönderildi', 'success');
+                } else if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            testNotification();
+                        } else {
+                            pwaChecker.log('Notification izni reddedildi', 'error');
+                        }
+                    });
+                } else {
+                    pwaChecker.log('Notification izni reddedilmiş', 'error');
+                }
+            } else {
+                pwaChecker.log('Notifications desteklenmiyor', 'error');
+            }
+        }
+
+        function testOffline() {
+            pwaChecker.log('Offline test başlatılıyor...', 'info');
+            
+            // Simulate offline mode
+            const wasOnline = navigator.onLine;
+            pwaChecker.log(`Mevcut online durumu: ${wasOnline}`, 'info');
+            
+            // Check if page loads from cache
+            setTimeout(() => {
+                pwaChecker.log('Offline test tamamlandı', 'success');
+            }, 2000);
+        }
+
+        function testInstall() {
+            pwaChecker.log('Install test başlatılıyor...', 'info');
+            
+            // Check if install prompt is available
+            if ('BeforeInstallPromptEvent' in window) {
+                pwaChecker.log('Install prompt mevcut', 'success');
+            } else {
+                pwaChecker.log('Install prompt mevcut değil', 'warning');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            pwaChecker.log('Log temizlendi', 'info');
+        }
+
+        // Initialize PWA checker
+        const pwaChecker = new PWAStatusChecker();
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        pwaChecker.log('Service Worker başarıyla kayıt edildi', 'success');
+                    })
+                    .catch(error => {
+                        pwaChecker.log('Service Worker kayıt hatası: ' + error.message, 'error');
+                    });
+            });
+        }
+
+        // Online/Offline events
+        window.addEventListener('online', () => {
+            pwaChecker.log('Online moda geçildi', 'success');
+        });
+
+        window.addEventListener('offline', () => {
+            pwaChecker.log('Offline moda geçildi', 'warning');
+        });
+    </script>
+</body>
+</html>

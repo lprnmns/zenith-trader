@@ -1,0 +1,194 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("user") // "admin" | "user"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  strategies        Strategy[]
+  watchedWallets   WatchedWallet[]
+  notifications    UserNotification[]
+  walletNotifications UserWalletNotification[]
+  subscription       UserSubscription?
+}
+
+model WatchedWallet {
+  id          Int      @id @default(autoincrement())
+  address     String   
+  description String?
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, address])
+  @@index([userId])
+}
+
+model UserNotification {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  walletAddress String
+  isEnabled    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, walletAddress])
+  @@index([userId])
+}
+
+model SuggestedWallet {
+  id                  Int      @id @default(autoincrement())
+  address             String   @unique
+  name                String   @default("Unknown")
+  riskLevel           String   @default("Medium")
+  // Timeframe PnL metrics (percent)
+  pnlPercent1d        Float?
+  pnlPercent7d        Float?
+  pnlPercent30d       Float?
+  pnlPercent180d      Float?
+  pnlPercent365d      Float?
+
+  openPositionsCount  Int      @default(0)
+
+  consistencyScore    Float    @default(0)
+  totalValue          Float    @default(0)
+  smartScore          Float?
+  lastAnalyzedAt      DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+model Strategy {
+  id             Int       @id @default(autoincrement())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  name           String
+  walletAddress  String    @unique
+  okxApiKey      String
+  okxApiSecret   String
+  okxPassphrase  String
+
+  positionSize   Float
+  leverage       Int       @default(5)
+  allowedTokens  String[]
+
+  isActive       Boolean   @default(true)
+  lastChecked    DateTime  @default(now())
+
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades         Trade[]
+
+  @@index([userId])
+}
+
+model Trade {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  strategyId Int
+  action     String   // 'BUY' | 'SELL'
+  token      String
+  amount     Float
+  status     String   // 'Success' | 'Failed'
+
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId, createdAt(sort: Desc)])
+}
+
+// ============================ YENİ TABLOLAR ============================
+
+model CopyTradingConfig {
+  id              Int      @id @default(autoincrement())
+  okxApiKey       String   // Encrypted
+  okxSecretKey    String   // Encrypted
+  okxPassphrase   String   // Encrypted
+  isActive        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("copy_trading_configs")
+}
+
+model UserWalletNotification {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  walletAddress String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, walletAddress])
+  @@index([userId])
+  @@map("user_wallet_notifications")
+}
+
+model PositionSignal {
+  id            Int      @id @default(autoincrement())
+  walletAddress String
+  signalType    String   // 'BUY' | 'SELL'
+  token         String
+  amount        Decimal  @db.Decimal(20, 8)
+  percentage    Decimal  @db.Decimal(10, 4)
+  price         Decimal  @db.Decimal(20, 8)
+  timestamp     DateTime
+  processed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  copyTrades    CopyTrade[]
+
+  @@index([walletAddress, timestamp])
+  @@index([processed])
+  @@map("position_signals")
+}
+
+model CopyTrade {
+  id            Int      @id @default(autoincrement())
+  signalId      Int
+  okxOrderId    String?
+  status        String   // 'PENDING' | 'SUCCESS' | 'FAILED'
+  executedAt    DateTime?
+  createdAt     DateTime @default(now())
+
+  signal        PositionSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+
+  @@index([signalId])
+  @@index([status])
+  @@map("copy_trades")
+}
+
+model UserSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_subscriptions")
+}
