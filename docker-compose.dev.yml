@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: zenith_trader_db_dev
+    environment:
+      POSTGRES_DB: zenith_trader_db_dev
+      POSTGRES_USER: zenith_user_dev
+      POSTGRES_PASSWORD: zenith_password_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with production
+    networks:
+      - zenith_dev_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zenith_user_dev -d zenith_trader_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache - Development
+  redis:
+    image: redis:7-alpine
+    container_name: zenith_trader_redis_dev
+    ports:
+      - "6380:6379"  # Different port to avoid conflict
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - zenith_dev_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  zenith_dev_network:
+    driver: bridge
