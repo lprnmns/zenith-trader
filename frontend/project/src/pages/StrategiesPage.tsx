@@ -8,15 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useStrategiesStore } from '@/stores/strategiesStore';
 import { getStrategyTrades } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CreateStrategyDialog } from '@/components/CreateStrategyDialog';
 import StrategyWizard from '@/components/strategies/StrategyWizard';
 import { formatCurrency, safeNumber } from '@/lib/utils';
 import { Plus, Edit, Trash2, Power, PowerOff, ExternalLink } from 'lucide-react';
 
 export function StrategiesPage() {
   const { strategies, updateStrategy, deleteStrategy, recentTrades, fetchStrategies, isLoading } = useStrategiesStore();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const openStrategyId = searchParams.get('open');
 
@@ -75,19 +73,11 @@ export function StrategiesPage() {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={() => setIsCreateDialogOpen(true)}
-            variant="outline"
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Quick Create
-          </Button>
-          <Button 
             onClick={() => setIsWizardOpen(true)}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Advanced Wizard
+            Yeni Strateji Oluştur
           </Button>
         </div>
       </div>
@@ -101,21 +91,15 @@ export function StrategiesPage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">No strategies yet</h3>
               <p className="text-slate-400 mb-6">
-                Create your first copy trading strategy to get started
+                İlk kopya ticaret stratejinizi oluşturarak başlayın
               </p>
               <div className="flex gap-2 justify-center">
-                  <Button 
-                    onClick={() => setIsCreateDialogOpen(true)}
-                    variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                  >
-                    Quick Create
-                  </Button>
                   <Button 
                     onClick={() => setIsWizardOpen(true)}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
-                    Advanced Wizard
+                    <Plus className="w-5 h-5 mr-2" />
+                    Yeni Strateji Oluştur
                   </Button>
                 </div>
             </div>
@@ -311,11 +295,6 @@ export function StrategiesPage() {
         </Accordion>
       )}
 
-      <CreateStrategyDialog 
-        open={isCreateDialogOpen} 
-        onOpenChange={setIsCreateDialogOpen} 
-      />
-      
       <StrategyWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
