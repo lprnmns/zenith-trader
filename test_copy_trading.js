@@ -239,17 +239,36 @@ class CopyTradingTestScript {
       
       // İşlenecek işlemleri filtrele
       this.tradesToExecute = this.walletAnalysis.tradeHistory.filter(trade => {
-        // Son 3 aydaki işlemleri al
-        const tradeDate = new Date(trade.date);
-        const threeMonthsAgo = new Date();
-        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        
-        return tradeDate >= threeMonthsAgo && trade.amountUsd >= TEST_CONFIG.minPositionSize;
+        // Tüm geçmiş işlemleri al (tarih filtresini kaldır)
+        // Sadece minimum boyut kontrolü yap
+        return trade.amountUsd >= TEST_CONFIG.minPositionSize;
       });
+      
+      // İşlemleri tarihe göre sırala (en yeniden en eskiye)
+      this.tradesToExecute.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // En fazla 10 işlem al (test için)
+      this.tradesToExecute = this.tradesToExecute.slice(0, 10);
       
       spinner.succeed(chalk.green(`✅ Wallet analizi tamamlandı`));
       console.log(chalk.blue(`📊 ${this.tradesToExecute.length} adet işlem bulundu`));
-      console.log('');
+      
+      // Debug bilgi: İlk 5 işlemi göster
+      if (this.tradesToExecute.length > 0) {
+        console.log(chalk.gray('🔍 Bulunan ilk 5 işlem:'));
+        this.tradesToExecute.slice(0, 5).forEach((trade, index) => {
+          console.log(chalk.gray(`   ${index + 1}. ${trade.date} - ${trade.action} ${trade.asset} - $${trade.amountUsd?.toFixed(2) || 'N/A'}`));
+        });
+        console.log('');
+      } else {
+        console.log(chalk.yellow('⚠️  Hiçbir işlem bulunamadı. Debug bilgileri:'));
+        console.log(chalk.gray(`   Total trades in analysis: ${this.walletAnalysis.tradeHistory?.length || 0}`));
+        if (this.walletAnalysis.tradeHistory && this.walletAnalysis.tradeHistory.length > 0) {
+          console.log(chalk.gray('   Sample trade structure:'));
+          console.log(chalk.gray(JSON.stringify(this.walletAnalysis.tradeHistory[0], null, 2)));
+        }
+        console.log('');
+      }
       
     } catch (error) {
       spinner.fail(chalk.red('❌ Wallet analizi başarısız'));
