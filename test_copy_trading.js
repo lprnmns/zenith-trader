@@ -348,8 +348,9 @@ class CopyTradingTestScript {
   // Pozisyon hesaplamalarını göster
   async showPositionCalculation(calculation, tradeNumber) {
     console.log(chalk.cyan('🧮 Pozisyon Hesaplamaları:'));
-    console.log(`   ${chalk.gray('Cüzdan Toplam Değer:')} $${this.walletAnalysis.totalValue?.toFixed(2) || 'N/A'}`);
-    console.log(`   ${chalk.gray('İşlem Yüzdesi:')} ${calculation.percentage.toFixed(2)}%`);
+    console.log(`   ${chalk.gray('Cüzdan Toplam Değer:')} $${calculation.walletValue?.toFixed(2) || 'N/A'}`);
+    console.log(`   ${chalk.gray('İşlem Yüzdesi (Cüzdan):')} ${calculation.percentage.toFixed(2)}%`);
+    console.log(`   ${chalk.gray('Kullanım Yüzdesi (Sizin):')} ${calculation.userPercentage.toFixed(2)}%`);
     console.log(`   ${chalk.gray('Sizin Bakiyeniz:')} $${this.userBalance.toFixed(2)}`);
     console.log(`   ${chalk.gray('Hesaplanan Pozisyon:')} $${calculation.positionSize.toFixed(2)}`);
     console.log(`   ${chalk.gray('Kaldıraç:')} ${calculation.leverage}x`);
@@ -416,17 +417,35 @@ class CopyTradingTestScript {
 
   // Pozisyon hesaplaması yap
   calculatePosition(trade) {
-    const walletValue = this.walletAnalysis.totalValue || 0;
-    const percentage = (trade.amountUsd / walletValue) * 100;
+    // Cüzdan toplam değerini farklı alanlardan dene
+    let walletValue = 0;
+    
+    if (this.walletAnalysis.totalValue) {
+      walletValue = this.walletAnalysis.totalValue;
+    } else if (this.walletAnalysis.summary && this.walletAnalysis.summary.totalValue) {
+      walletValue = this.walletAnalysis.summary.totalValue;
+    } else {
+      // Trade history'den toplam değeri hesapla
+      const totalTradeValue = this.walletAnalysis.tradeHistory?.reduce((sum, t) => sum + (t.amountUsd || 0), 0) || 0;
+      walletValue = totalTradeValue > 0 ? totalTradeValue : 100000; // Fallback değer
+    }
+    
+    // Yüzdeyi hesapla (max %20 ile sınırla)
+    const percentage = walletValue > 0 ? Math.min((trade.amountUsd / walletValue) * 100, 20) : 10; // Max %20
     const leverage = trade.action === 'BUY' ? TEST_CONFIG.defaultLeverage.LONG : TEST_CONFIG.defaultLeverage.SHORT;
-    const positionSize = (this.userBalance * percentage) / 100;
+    
+    // Pozisyon boyutunu kullanıcı bakiyesine göre hesapla (max %10 kullan)
+    const userPercentage = Math.min(percentage, 10); // Kullanıcı bakiyesinin max %10'u
+    const positionSize = (this.userBalance * userPercentage) / 100;
     const totalExposure = positionSize * leverage;
     
     return {
       percentage,
+      userPercentage,
       leverage,
       positionSize,
-      totalExposure
+      totalExposure,
+      walletValue // Debug için eklendi
     };
   }
 
