@@ -467,7 +467,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               <p className="text-sm text-slate-400">Kaldıraç ve marj modunu ayarlayın</p>
             </div>
 
-            <div className="bg-surface-light/50 border border-border rounded-xl p-6">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <label className="text-lg font-medium text-primary">
                   Kaldıraç: <span className="text-orange-400">{watchedValues.leverage}x</span>
@@ -483,7 +483,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   min="1"
                   max="125"
                   {...methods.register('leverage', { valueAsNumber: true })}
-                  className="w-full h-3 bg-surface rounded-lg appearance-none cursor-pointer slider accent-orange-500"
+                  className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider accent-orange-500"
                 />
                 <div className="flex justify-between text-sm text-slate-400">
                   <span>1x</span>
@@ -536,18 +536,15 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
 
             {watchedValues.sizingMethod === 'Fixed Amount' ? (
-              <div>
-                <label className="block text-sm font-medium mb-1">Amount per Trade (USD)</label>
-                <input
-                  type="number"
-                  min="1"
-                  {...methods.register('amountPerTrade', { valueAsNumber: true })}
-                  className="w-full p-2 border rounded-md"
-                />
-                {errors.amountPerTrade && (
-                  <p className="text-red-500 text-sm mt-1">{errors.amountPerTrade.message}</p>
-                )}
-              </div>
+              <ModernInput
+                label="İşlem Başına Tutar (USD)"
+                type="number"
+                placeholder="100"
+                min={1}
+                {...methods.register('amountPerTrade', { valueAsNumber: true })}
+                error={errors.amountPerTrade?.message}
+                helperText="Her bir işlem için kullanılacak USD tutarı"
+              />
             ) : (
               <div>
                 <label className="block text-sm font-medium mb-1">Percentage to Copy (%)</label>
@@ -566,32 +563,27 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Stop Loss (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                {...methods.register('stopLoss', { valueAsNumber: true })}
-                className="w-full p-2 border rounded-md"
-                placeholder="5.0"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Automatic position close at this loss percentage
-              </p>
-            </div>
+            <ModernInput
+              label="Stop Loss (%)"
+              type="number"
+              placeholder="5.0"
+              min={0}
+              max={100}
+              step={0.1}
+              {...methods.register('stopLoss', { valueAsNumber: true })}
+              error={errors.stopLoss?.message}
+              helperText="Bu kayıp yüzdesinde pozisyon otomatik kapanır"
+            />
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Daily Trade Limit</label>
-              <input
-                type="number"
-                min="1"
-                {...methods.register('dailyLimit', { valueAsNumber: true })}
-                className="w-full p-2 border rounded-md"
-                placeholder="10"
-              />
-            </div>
+            <ModernInput
+              label="Günlük İşlem Limiti"
+              type="number"
+              placeholder="10"
+              min={1}
+              {...methods.register('dailyLimit', { valueAsNumber: true })}
+              error={errors.dailyLimit?.message}
+              helperText="Günlük maksimum işlem sayısı"
+            />
           </div>
         );
 
@@ -621,27 +613,25 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Min Trade Size (USD)</label>
-                <input
-                  type="number"
-                  min="0"
-                  {...methods.register('minTradeSize', { valueAsNumber: true })}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="10"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Max Trade Size (USD)</label>
-                <input
-                  type="number"
-                  min="0"
-                  {...methods.register('maxTradeSize', { valueAsNumber: true })}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="1000"
-                />
-              </div>
+              <ModernInput
+                label="Min İşlem Boyutu (USD)"
+                type="number"
+                placeholder="10"
+                min={0}
+                {...methods.register('minTradeSize', { valueAsNumber: true })}
+                error={errors.minTradeSize?.message}
+                helperText="Minimum işlem tutarı"
+              />
+              
+              <ModernInput
+                label="Max İşlem Boyutu (USD)"
+                type="number"
+                placeholder="1000"
+                min={0}
+                {...methods.register('maxTradeSize', { valueAsNumber: true })}
+                error={errors.maxTradeSize?.message}
+                helperText="Maksimum işlem tutarı"
+              />
             </div>
           </div>
         );
@@ -649,19 +639,16 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'execution':
         return (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Execution Delay (seconds)</label>
-              <input
-                type="number"
-                min="0"
-                max="300"
-                {...methods.register('executionDelay', { valueAsNumber: true })}
-                className="w-full p-2 border rounded-md"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Delay before executing trades (0 for immediate)
-              </p>
-            </div>
+            <ModernInput
+              label="İşlem Gecikmesi (saniye)"
+              type="number"
+              placeholder="0"
+              min={0}
+              max={300}
+              {...methods.register('executionDelay', { valueAsNumber: true })}
+              error={errors.executionDelay?.message}
+              helperText="İşlemleri yürütmeden önceki bekleme süresi (0 anında)"
+            />
 
             <div>
               <label className="block text-sm font-medium mb-1">Max Slippage (%)</label>
@@ -680,16 +667,16 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Retry Attempts</label>
-              <input
-                type="number"
-                min="0"
-                max="5"
-                {...methods.register('retryAttempts', { valueAsNumber: true })}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
+            <ModernInput
+              label="Yeniden Deneme Sayısı"
+              type="number"
+              placeholder="3"
+              min={0}
+              max={5}
+              {...methods.register('retryAttempts', { valueAsNumber: true })}
+              error={errors.retryAttempts?.message}
+              helperText="Başarısız işlemler için yeniden deneme sayısı"
+            />
 
             <div className="space-y-2">
               <label className="flex items-center space-x-2">
@@ -746,7 +733,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-surface border-border">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <Info className="w-4 h-4" />
@@ -767,7 +754,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-surface border-border">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <ExternalLink className="w-4 h-4" />
@@ -786,7 +773,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-surface border-border">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
@@ -805,7 +792,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-surface border-border">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <Shield className="w-4 h-4" />
@@ -825,7 +812,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </Card>
             </div>
 
-            <div className="bg-surface-light border border-border rounded-lg p-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-success mt-0.5" />
                 <div>
@@ -849,8 +836,8 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-surface border-border shadow-2xl">
-        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-border">
+      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-900 border-slate-700 shadow-2xl">
+        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
@@ -878,7 +865,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
 
-              <div className="flex items-center justify-between pt-6 border-t border-border bg-surface-light/30 -mx-6 px-6 -mb-6 pb-6">
+              <div className="flex items-center justify-between pt-6 border-t border-slate-700 bg-slate-800/50 -mx-6 px-6 -mb-6 pb-6">
                 <div className="flex items-center gap-3">
                   {currentStep > 0 && (
                     <ModernButton

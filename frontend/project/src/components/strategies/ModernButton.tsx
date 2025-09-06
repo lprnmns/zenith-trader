@@ -80,13 +80,13 @@ const ModernButton: React.FC<ModernButtonProps> = ({
   };
 
   const variantClasses = {
-    primary: 'bg-primary text-white hover:bg-primary-dark focus:ring-primary',
-    secondary: 'bg-secondary text-white hover:bg-secondary-dark focus:ring-secondary',
-    outline: 'bg-transparent text-primary border border-border hover:bg-surface-light focus:ring-primary',
-    ghost: 'bg-transparent text-secondary hover:bg-surface-light focus:ring-primary',
-    success: 'bg-success text-white hover:bg-success-light focus:ring-success',
-    warning: 'bg-warning text-white hover:bg-warning-light focus:ring-warning',
-    error: 'bg-error text-white hover:bg-error-light focus:ring-error',
+    primary: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500 focus:ring-emerald-500',
+    secondary: 'bg-slate-600 hover:bg-slate-700 text-white border-slate-600 focus:ring-slate-500',
+    outline: 'bg-transparent border-slate-400 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-300 focus:ring-slate-500',
+    ghost: 'bg-transparent border-transparent text-slate-300 hover:bg-slate-700 hover:text-white focus:ring-slate-500',
+    success: 'bg-green-500 hover:bg-green-600 text-white border-green-500 focus:ring-green-500',
+    warning: 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500 focus:ring-amber-500',
+    error: 'bg-red-500 hover:bg-red-600 text-white border-red-500 focus:ring-red-500',
   };
 
   const disabledClasses = 'opacity-60 cursor-not-allowed pointer-events-none';
@@ -106,7 +106,7 @@ const ModernButton: React.FC<ModernButtonProps> = ({
     'focus:outline-none',
     'focus:ring-2',
     'focus:ring-offset-2',
-    'focus:ring-offset-background',
+    'focus:ring-offset-slate-900',
     'disabled:transform-none',
     'disabled:hover:scale-100',
     {

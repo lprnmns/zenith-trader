@@ -41,7 +41,7 @@ export interface ModernInputProps {
   onValidationChange?: (isValid: boolean, error?: string) => void;
 }
 
-const ModernInput: React.FC<ModernInputProps> = ({
+const ModernInput = React.forwardRef<HTMLInputElement, ModernInputProps>(({
   label,
   type = 'text',
   placeholder,
@@ -71,7 +71,7 @@ const ModernInput: React.FC<ModernInputProps> = ({
   validateOnChange = false,
   validationRule,
   onValidationChange,
-}) => {
+}, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -219,6 +219,7 @@ const ModernInput: React.FC<ModernInputProps> = ({
         )}
 
         <input
+          ref={ref}
           id={inputId}
           type={inputType}
           value={value}
@@ -308,6 +309,8 @@ const ModernInput: React.FC<ModernInputProps> = ({
       )}
     </div>
   );
-};
+});
+
+ModernInput.displayName = 'ModernInput';
 
 export default ModernInput;

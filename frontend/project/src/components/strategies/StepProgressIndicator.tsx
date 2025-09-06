@@ -23,9 +23,9 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
     <div className={cn('step-progress', className)}>
       <div className="flex items-center justify-between relative">
         {/* Progress Line */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-surface-light">
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-slate-700">
           <div 
-            className="h-full bg-primary transition-all duration-500"
+            className="h-full bg-emerald-500 transition-all duration-500"
             style={{
               width: `${(steps.filter(step => step.completed).length / (steps.length - 1)) * 100}%`
             }}
@@ -49,9 +49,9 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
               className={cn(
                 'step-circle w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2',
                 {
-                  'bg-primary border-primary text-white': step.completed,
-                  'bg-surface border-primary text-primary': step.active,
-                  'bg-surface-light border-border text-tertiary': !step.active && !step.completed,
+                  'bg-emerald-500 border-emerald-500 text-white': step.completed,
+                  'bg-slate-800 border-emerald-500 text-emerald-400': step.active,
+                  'bg-slate-700 border-slate-600 text-slate-400': !step.active && !step.completed,
                 }
               )}
             >
@@ -68,9 +68,9 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
                 className={cn(
                   'step-title font-medium text-sm transition-colors',
                   {
-                    'text-primary': step.active,
-                    'text-success': step.completed,
-                    'text-tertiary': !step.active && !step.completed,
+                    'text-emerald-400': step.active,
+                    'text-green-400': step.completed,
+                    'text-slate-400': !step.active && !step.completed,
                   }
                 )}
               >
@@ -80,9 +80,9 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
                 className={cn(
                   'step-description text-xs mt-1 transition-colors',
                   {
-                    'text-secondary': step.active,
-                    'text-tertiary': step.completed,
-                    'text-quaternary': !step.active && !step.completed,
+                    'text-slate-300': step.active,
+                    'text-slate-400': step.completed,
+                    'text-slate-500': !step.active && !step.completed,
                   }
                 )}
               >
@@ -92,7 +92,7 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
 
             {/* Arrow (except for last step) */}
             {index < steps.length - 1 && (
-              <div className="absolute -right-6 top-5 text-tertiary">
+              <div className="absolute -right-6 top-5 text-slate-400">
                 <ArrowRight className="w-4 h-4" />
               </div>
             )}
@@ -103,16 +103,16 @@ const StepProgressIndicator: React.FC<StepProgressIndicatorProps> = ({
       {/* Mobile Steps */}
       <div className="md:hidden mt-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-primary">
+          <span className="text-sm font-medium text-emerald-400">
             Adım {steps.findIndex(step => step.active) + 1} / {steps.length}
           </span>
-          <span className="text-sm text-tertiary">
+          <span className="text-sm text-slate-400">
             {steps.find(step => step.active)?.title}
           </span>
         </div>
-        <div className="w-full bg-surface-light rounded-full h-2">
+        <div className="w-full bg-slate-700 rounded-full h-2">
           <div 
-            className="bg-primary h-2 rounded-full transition-all duration-500"
+            className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
             style={{
               width: `${(steps.filter(step => step.completed).length / (steps.length - 1)) * 100}%`
             }}
