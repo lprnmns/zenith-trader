@@ -42,22 +42,43 @@ export function ExplorerPage() {
 
   const handleAnalyze = async () => {
     if (!walletAddress.trim()) return;
+    
+    // Clear previous data before starting new analysis
+    setPerformanceData([]);
+    setTradeHistory([]);
+    setSummary(null);
+    setExpanded({});
+    
     setIsAnalyzing(true);
     try {
       const res = await getWalletAnalysis(walletAddress.trim());
       const data = res.data || {};
+      
+      // Set new data with proper validation
       setSummary(data.summary || null);
-      const chart = Array.isArray(data.cumulativePnlChart) ? data.cumulativePnlChart.map((p: any) => ({ date: p.date, value: p.cumulativePnl })) : [];
+      
+      // Process chart data with date formatting
+      const chart = Array.isArray(data.cumulativePnlChart) 
+        ? data.cumulativePnlChart.map((p: any) => ({ 
+            date: p.date || '', 
+            value: typeof p.cumulativePnl === 'number' ? p.cumulativePnl : 0 
+          })) 
+        : [];
       setPerformanceData(chart);
-      setTradeHistory(Array.isArray(data.tradeHistory) ? data.tradeHistory : []);
+      
+      // Process trade history
+      const trades = Array.isArray(data.tradeHistory) ? data.tradeHistory : [];
+      setTradeHistory(trades);
+      
       setHasAnalyzed(true);
     } catch (e) {
+      console.error('Analysis error:', e);
       setPerformanceData([]);
       setTradeHistory([]);
       setSummary(null);
       setHasAnalyzed(false);
     } finally {
-    setIsAnalyzing(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -87,11 +108,15 @@ export function ExplorerPage() {
     return [...list].sort((a, b) => (byKey(b) as number) - (byKey(a) as number));
   }, [suggested, sortBy]);
 
-  // Summary
-  const totalPnL = performanceData.length > 0 ? safeNumber(performanceData[performanceData.length - 1]?.value ?? 0) : 0;
-  const winRate = safeNumber(summary?.winRatePercent ?? 0);
-  const totalTradesCount = safeNumber(summary?.totalTrades ?? 0);
-  const avgTradeSize = safeNumber(summary?.avgTradeSizeUsd ?? 0);
+  // Summary - Use fresh data for each analysis
+  const totalPnL = React.useMemo(() => {
+    if (performanceData.length === 0) return 0;
+    return safeNumber(performanceData[performanceData.length - 1]?.value ?? 0);
+  }, [performanceData]);
+  
+  const winRate = React.useMemo(() => safeNumber(summary?.winRatePercent ?? 0), [summary]);
+  const totalTradesCount = React.useMemo(() => safeNumber(summary?.totalTrades ?? 0), [summary]);
+  const avgTradeSize = React.useMemo(() => safeNumber(summary?.avgTradeSizeUsd ?? 0), [summary]);
   const toggleExpand = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
@@ -265,11 +290,54 @@ export function ExplorerPage() {
           {/* Cumulative PnL Chart */}
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
             <CardHeader>
-              <div className="flex items-center justify-between"><CardTitle className="text-white">Cumulative PnL</CardTitle></div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Cumulative PnL</CardTitle>
+                {performanceData.length > 0 && (
+                  <span className="text-sm text-slate-400">
+                    {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%"><LineChart data={performanceData}><CartesianGrid strokeDasharray="3 3" stroke="#374151" /><XAxis dataKey="date" stroke="#9CA3AF" tick={{ fontSize: 12 }} /><YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} /><Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#F3F4F6' }} formatter={(value) => [formatCurrency(value as number), 'PnL (USD)']} /><Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} dot={true} /></LineChart></ResponsiveContainer>
+                {performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" key={`chart-${walletAddress}-${Date.now()}`}>
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#9CA3AF" 
+                        tick={{ fontSize: 12 }} 
+                      />
+                      <YAxis 
+                        stroke="#9CA3AF" 
+                        tick={{ fontSize: 12 }} 
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #374151', 
+                          borderRadius: '8px', 
+                          color: '#F3F4F6' 
+                        }} 
+                        formatter={(value) => [formatCurrency(value as number), 'PnL (USD)']} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#10B981" 
+                        strokeWidth={2} 
+                        dot={true} 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-slate-400">No chart data available</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
