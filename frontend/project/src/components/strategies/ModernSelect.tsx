@@ -33,7 +33,7 @@ export interface ModernSelectProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const ModernSelect: React.FC<ModernSelectProps> = ({
+const ModernSelect = React.forwardRef<HTMLDivElement, ModernSelectProps>(({
   label,
   placeholder = 'Select an option',
   value,
@@ -54,7 +54,7 @@ const ModernSelect: React.FC<ModernSelectProps> = ({
   clearable = false,
   variant = 'default',
   size = 'md',
-}) => {
+}, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -114,7 +114,7 @@ const ModernSelect: React.FC<ModernSelectProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div ref={ref} className="space-y-2">
       {label && (
         <label 
           htmlFor={selectId}

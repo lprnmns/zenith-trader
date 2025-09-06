@@ -294,6 +294,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'basic':
         return (
           <div className="space-y-6">
+            <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-primary mb-2">Strateji Bilgileri</h3>
+              <p className="text-sm text-slate-400">Kopya ticaret stratejiniz için temel bilgileri girin</p>
+            </div>
+
             <ModernInput
               label="Strateji Adı"
               placeholder="Örnek: BTC Takip Stratejisi"
@@ -305,6 +310,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 min: 1,
                 max: 50
               }}
+              className="text-lg"
             />
             
             <ModernInput
@@ -326,19 +332,24 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'exchange':
         return (
           <div className="space-y-6">
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-primary mb-2">Borsa Ayarları</h3>
+              <p className="text-sm text-slate-400">İşlem yapacağınız borsayı ve kopyalama modunu seçin</p>
+            </div>
+
             {/* OKX Credentials Auto-fill */}
             {watchedValues.exchange === 'OKX' && (
-              <div className="modern-card p-4 border border-emerald-400/20 bg-emerald-400/5">
-                <div className="flex items-center justify-between mb-3">
+              <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-emerald-400">OKX Kimlik Bilgileri</h3>
-                  <button
-                    type="button"
+                  <ModernButton
+                    variant="primary"
+                    size="sm"
                     onClick={handleAutoFillOKXCredentials}
-                    className="modern-button sm primary"
-                    disabled={isLoadingCredentials}
+                    loading={isLoadingCredentials}
                   >
                     {isLoadingCredentials ? 'Yükleniyor...' : 'Kimlik Bilgilerini Getir'}
-                  </button>
+                  </ModernButton>
                 </div>
                 
                 {credentialsError && (
@@ -451,26 +462,41 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'futures':
         return (
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-3 text-primary">
-                Kaldıraç: {watchedValues.leverage}x
-              </label>
-              <div className="space-y-2">
+            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-primary mb-2">Futures Ayarları</h3>
+              <p className="text-sm text-slate-400">Kaldıraç ve marj modunu ayarlayın</p>
+            </div>
+
+            <div className="bg-surface-light/50 border border-border rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-lg font-medium text-primary">
+                  Kaldıraç: <span className="text-orange-400">{watchedValues.leverage}x</span>
+                </label>
+                <div className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-medium">
+                  {watchedValues.leverage > 20 ? 'Yüksek Risk' : watchedValues.leverage > 10 ? 'Orta Risk' : 'Düşük Risk'}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
                 <input
                   type="range"
                   min="1"
                   max="125"
                   {...methods.register('leverage', { valueAsNumber: true })}
-                  className="w-full h-2 bg-surface-light rounded-lg appearance-none cursor-pointer slider"
+                  className="w-full h-3 bg-surface rounded-lg appearance-none cursor-pointer slider accent-orange-500"
                 />
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-sm text-slate-400">
                   <span>1x</span>
-                  <span>125x</span>
+                  <span className="text-orange-400">25x</span>
+                  <span className="text-red-400">125x</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Yüksek kaldıraç risk ve potansiyel getirileri artırır
-              </p>
+              
+              <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                <p className="text-xs text-orange-400">
+                  ⚠️ Yüksek kaldıraç risk ve potansiyel getirileri artırır. Lütfen dikkatli olun.
+                </p>
+              </div>
             </div>
 
             <ModernSelect
@@ -822,11 +848,19 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="strategy-wizard modern-dialog w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <CardHeader className="pb-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-surface border-border shadow-2xl">
+        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-border">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold text-primary">Strateji Oluştur</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-primary">Strateji Oluştur</CardTitle>
+                <p className="text-sm text-slate-400">Yeni kopya ticaret stratejisi oluşturun</p>
+              </div>
+            </div>
             <ModernButton
               variant="ghost"
               size="sm"
@@ -844,7 +878,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
 
-              <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex items-center justify-between pt-6 border-t border-border bg-surface-light/30 -mx-6 px-6 -mb-6 pb-6">
                 <div className="flex items-center gap-3">
                   {currentStep > 0 && (
                     <ModernButton
@@ -877,7 +911,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     leftIcon={<Save className="w-4 h-4" />}
                   >
                     Taslağı Kaydet
-                    {draftSaved && <span className="ml-1 text-success">✓</span>}
+                    {draftSaved && <span className="ml-1 text-emerald-400">✓</span>}
                   </ModernButton>
                 </div>
 
