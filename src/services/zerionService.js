@@ -6,8 +6,17 @@ const apiClient = axios.create({
 	baseURL: 'https://api.zerion.io/v1',
 	headers: {
 		'accept': 'application/json',
-		'authorization': `Basic ${Buffer.from(config.zerionApiKey + ':', 'utf8').toString('base64')}`
+		'authorization': `Basic ${Buffer.from(config.zerionApiKey + ':', 'utf8').toString('base64')}`,
+		'Cache-Control': 'no-cache',
+		'Pragma': 'no-cache'
 	}
+});
+
+// Add request interceptor to add timestamp
+apiClient.interceptors.request.use((config) => {
+	config.params = config.params || {};
+	config.params._t = Date.now();
+	return config;
 });
 
 /**
@@ -284,7 +293,19 @@ async function getWalletTrades(address, maxCount = 500, operationTypes = ['trade
  * Returns normalized records with side symbols, units and USD.
  */
 async function getWalletTradeTransfers(address, maxCount = 500) {
+  console.log(`[Zerion] getWalletTradeTransfers called for ${address} at ${new Date().toISOString()}`);
+  console.log(`[Zerion] API Key present: ${!!config.zerionApiKey}, First 10 chars: ${config.zerionApiKey?.substring(0, 10)}...`);
+  
   const raw = await getWalletTrades(address, maxCount, ['trade','send','receive']);
+  console.log(`[Zerion] Raw trades fetched: ${raw.length} items`);
+  
+  // Log first trade date and last trade date
+  if (raw.length > 0) {
+    console.log(`[Zerion] First trade date: ${raw[0]?.date}`);
+    console.log(`[Zerion] Last trade date: ${raw[raw.length - 1]?.date}`);
+    console.log(`[Zerion] Sample trade:`, JSON.stringify(raw[0], null, 2).substring(0, 500));
+  }
+  
   let mapped = raw.map((t) => ({
     date: t.date,
     operationType: t.operationType || 'trade',
@@ -301,6 +322,8 @@ async function getWalletTradeTransfers(address, maxCount = 500) {
     inChain: t._raw?.inChain || null,
     outChain: t._raw?.outChain || null,
   }));
+  
+  console.log(`[Zerion] Mapped ${mapped.length} transfers`);
   if (mapped.length > 0) return mapped;
   // Fallback: fetch without operation type filter
   async function getPage(address, cursor) {

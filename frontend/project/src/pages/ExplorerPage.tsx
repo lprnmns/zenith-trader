@@ -42,22 +42,67 @@ export function ExplorerPage() {
 
   const handleAnalyze = async () => {
     if (!walletAddress.trim()) return;
+    
+    console.log('[ExplorerPage] Starting analysis for:', walletAddress);
+    
+    // Force clear all previous data
+    setPerformanceData([]);
+    setTradeHistory([]);
+    setSummary(null);
+    setExpanded({});
+    setHasAnalyzed(false);
+    
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     setIsAnalyzing(true);
     try {
+      console.log('[ExplorerPage] Fetching data from API...');
       const res = await getWalletAnalysis(walletAddress.trim());
       const data = res.data || {};
-      setSummary(data.summary || null);
-      const chart = Array.isArray(data.cumulativePnlChart) ? data.cumulativePnlChart.map((p: any) => ({ date: p.date, value: p.cumulativePnl })) : [];
-      setPerformanceData(chart);
-      setTradeHistory(Array.isArray(data.tradeHistory) ? data.tradeHistory : []);
+      
+      console.log('[ExplorerPage] API Response:', {
+        summary: data.summary,
+        chartLength: data.cumulativePnlChart?.length,
+        tradeHistoryLength: data.tradeHistory?.length
+      });
+      
+      // Process and set summary with explicit new object
+      const newSummary = data.summary ? { ...data.summary } : null;
+      setSummary(newSummary);
+      
+      // Process chart data with validation and new array
+      const newChart = Array.isArray(data.cumulativePnlChart) 
+        ? [...data.cumulativePnlChart].map((p: any, idx: number) => ({ 
+            date: p.date || `Point ${idx}`, 
+            value: typeof p.cumulativePnl === 'number' ? p.cumulativePnl : 0 
+          })) 
+        : [];
+      
+      console.log('[ExplorerPage] New chart data:', newChart.length, 'points');
+      console.log('[ExplorerPage] Chart sample:', newChart.slice(0, 3));
+      
+      // Force update with new array reference
+      setPerformanceData([...newChart]);
+      
+      // Process trade history with new array
+      const newTrades = Array.isArray(data.tradeHistory) 
+        ? [...data.tradeHistory] 
+        : [];
+      
+      console.log('[ExplorerPage] New trade history:', newTrades.length, 'trades');
+      setTradeHistory([...newTrades]);
+      
       setHasAnalyzed(true);
+      console.log('[ExplorerPage] Analysis complete');
     } catch (e) {
+      console.error('[ExplorerPage] Analysis error:', e);
       setPerformanceData([]);
       setTradeHistory([]);
       setSummary(null);
       setHasAnalyzed(false);
     } finally {
-    setIsAnalyzing(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -87,11 +132,26 @@ export function ExplorerPage() {
     return [...list].sort((a, b) => (byKey(b) as number) - (byKey(a) as number));
   }, [suggested, sortBy]);
 
-  // Summary
-  const totalPnL = performanceData.length > 0 ? safeNumber(performanceData[performanceData.length - 1]?.value ?? 0) : 0;
+  // Summary - Direct calculations from state
+  const totalPnL = performanceData.length > 0 
+    ? safeNumber(performanceData[performanceData.length - 1]?.value ?? 0) 
+    : 0;
+  
   const winRate = safeNumber(summary?.winRatePercent ?? 0);
   const totalTradesCount = safeNumber(summary?.totalTrades ?? 0);
   const avgTradeSize = safeNumber(summary?.avgTradeSizeUsd ?? 0);
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[ExplorerPage] State updated:', {
+      performanceDataLength: performanceData.length,
+      totalPnL,
+      winRate,
+      totalTradesCount,
+      avgTradeSize,
+      hasAnalyzed
+    });
+  }, [performanceData, summary, hasAnalyzed]);
   const toggleExpand = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
@@ -231,29 +291,34 @@ export function ExplorerPage() {
 
       {hasAnalyzed && !isAnalyzing && (
         <>
-          {/* Wallet Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+          {/* Metrics Cards - Force re-render with keys */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" key={`metrics-${walletAddress}-${Date.now()}`}>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`pnl-${totalPnL}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total PnL (Cumulative)</CardTitle></CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(totalPnL)}</div>
+                <div className={`text-2xl font-bold mb-1 ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(totalPnL)}
+                </div>
+                <p className="text-xs text-slate-400">
+                  {performanceData.length > 0 ? `From ${performanceData.length} data points` : 'No data'}
+                </p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`winrate-${winRate}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Win Rate</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{formatPercentage(winRate).replace('+','')}</div>
                 <p className="text-xs text-slate-400">Over realized sales</p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`trades-${totalTradesCount}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total Trades</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{totalTradesCount}</div>
                 <p className="text-xs text-slate-400">Realized (SELL) trades</p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`avgsize-${avgTradeSize}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Avg Trade Size</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{formatCurrency(avgTradeSize)}</div>
@@ -265,11 +330,62 @@ export function ExplorerPage() {
           {/* Cumulative PnL Chart */}
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
             <CardHeader>
-              <div className="flex items-center justify-between"><CardTitle className="text-white">Cumulative PnL</CardTitle></div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Cumulative PnL</CardTitle>
+                {performanceData.length > 0 && (
+                  <span className="text-sm text-slate-400">
+                    {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 mb-2">
+                  Data points: {performanceData.length} | 
+                  Last value: ${performanceData[performanceData.length - 1]?.value?.toFixed(2) || 0} |
+                  Last update: {new Date().toLocaleTimeString()}
+                </div>
+              )}
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%"><LineChart data={performanceData}><CartesianGrid strokeDasharray="3 3" stroke="#374151" /><XAxis dataKey="date" stroke="#9CA3AF" tick={{ fontSize: 12 }} /><YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} /><Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#F3F4F6' }} formatter={(value) => [formatCurrency(value as number), 'PnL (USD)']} /><Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} dot={true} /></LineChart></ResponsiveContainer>
+                {performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" key={`chart-${walletAddress}-${performanceData.length}-${performanceData[0]?.date}-${performanceData[performanceData.length - 1]?.value}`}>
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#9CA3AF" 
+                        tick={{ fontSize: 12 }} 
+                      />
+                      <YAxis 
+                        stroke="#9CA3AF" 
+                        tick={{ fontSize: 12 }} 
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #374151', 
+                          borderRadius: '8px', 
+                          color: '#F3F4F6' 
+                        }} 
+                        formatter={(value) => [formatCurrency(value as number), 'PnL (USD)']} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#10B981" 
+                        strokeWidth={2} 
+                        dot={true} 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-slate-400">No chart data available</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

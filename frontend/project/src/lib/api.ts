@@ -26,7 +26,9 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('[API] Response error:', error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
+      console.log('[API] 401 Unauthorized - redirecting to login');
       // Token expired, clear auth storage
       localStorage.removeItem('auth-storage');
       window.location.href = '/login';
@@ -44,5 +46,8 @@ export const getWalletPerformance = (address: string) => apiClient.get(`/wallets
 export const getDashboardSummary = () => apiClient.get('/dashboard/summary');
 export const getSuggestedWallets = () => apiClient.get('/explorer/suggested-wallets');
 export const getWalletTradeHistory = (address: string) => apiClient.get(`/wallets/${address}/trade-history`);
-export const getWalletAnalysis = (address: string) => apiClient.get(`/explorer/${address}/analysis`);
+export const getWalletAnalysis = (address: string) => apiClient.get(`/explorer/${address}/analysis`, {
+  params: { timestamp: Date.now() },
+  headers: { 'Cache-Control': 'no-cache' }
+});
 export const getStrategyTrades = (id: string | number) => apiClient.get(`/strategies/${id}/trades`);
