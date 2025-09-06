@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, ChevronRight, Save, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, Info, ExternalLink, TrendingUp, Shield, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import StepProgressIndicator from './StepProgressIndicator';
+import ModernInput from './ModernInput';
+import ModernSelect from './ModernSelect';
+import ModernButton from './ModernButton';
 import { useAuthStore } from '@/stores/authStore';
 import '@/styles/strategy-wizard.css';
 
@@ -240,29 +243,32 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'basic':
         return (
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-primary">Strateji Adı</label>
-              <input
-                {...methods.register('name')}
-                className="modern-input w-full"
-                placeholder="Örnek: BTC Takip Stratejisi"
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-              )}
-            </div>
+            <ModernInput
+              label="Strateji Adı"
+              placeholder="Örnek: BTC Takip Stratejisi"
+              {...methods.register('name')}
+              error={errors.name?.message}
+              validateOnChange={true}
+              validationRule={{
+                pattern: /^[a-zA-Z0-9\s\-_]+$/,
+                min: 1,
+                max: 50
+              }}
+            />
             
-            <div>
-              <label className="block text-sm font-medium mb-2 text-primary">Cüzdan Adresi</label>
-              <input
-                {...methods.register('walletAddress')}
-                className="modern-input w-full font-mono text-sm"
-                placeholder="0x..."
-              />
-              {errors.walletAddress && (
-                <p className="text-red-500 text-sm mt-1">{errors.walletAddress.message}</p>
-              )}
-            </div>
+            <ModernInput
+              label="Cüzdan Adresi"
+              placeholder="0x..."
+              {...methods.register('walletAddress')}
+              error={errors.walletAddress?.message}
+              validateOnChange={true}
+              validationRule={{
+                pattern: /^0x[a-fA-F0-9]{40}$/,
+                min: 42,
+                max: 42
+              }}
+              className="font-mono"
+            />
           </div>
         );
 
@@ -330,71 +336,66 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-3 text-primary">Borsa Seçimi</label>
-              <div className="grid grid-cols-3 gap-3">
-                {['OKX', 'Binance', 'Bybit'].map((exchange) => (
-                  <button
-                    key={exchange}
-                    type="button"
-                    onClick={() => setValue('exchange', exchange as any)}
-                    className={`modern-button outline ${watchedValues.exchange === exchange ? 'primary' : ''}`}
-                  >
-                    <div className="font-medium">{exchange}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ModernSelect
+              label="Borsa Seçimi"
+              value={watchedValues.exchange}
+              onChange={(value) => setValue('exchange', value)}
+              options={[
+                { value: 'OKX', label: 'OKX' },
+                { value: 'Binance', label: 'Binance' },
+                { value: 'Bybit', label: 'Bybit' }
+              ]}
+              error={errors.exchange?.message}
+            />
 
-            <div>
-              <label className="block text-sm font-medium mb-3 text-primary">Kopyalama Modu</label>
-              <div className="grid grid-cols-2 gap-3">
-                {['Perpetual', 'Spot'].map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setValue('copyMode', mode as any)}
-                    className={`modern-button outline ${watchedValues.copyMode === mode ? 'primary' : ''}`}
-                  >
-                    <div className="font-medium">{mode}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ModernSelect
+              label="Kopyalama Modu"
+              value={watchedValues.copyMode}
+              onChange={(value) => setValue('copyMode', value)}
+              options={[
+                { value: 'Perpetual', label: 'Perpetual (Sürekli)' },
+                { value: 'Spot', label: 'Spot' }
+              ]}
+              error={errors.copyMode?.message}
+            />
           </div>
         );
 
       case 'futures':
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Leverage</label>
-              <div className="flex items-center space-x-2">
+              <label className="block text-sm font-medium mb-3 text-primary">
+                Kaldıraç: {watchedValues.leverage}x
+              </label>
+              <div className="space-y-2">
                 <input
                   type="range"
                   min="1"
                   max="125"
                   {...methods.register('leverage', { valueAsNumber: true })}
-                  className="flex-1"
+                  className="w-full h-2 bg-surface-light rounded-lg appearance-none cursor-pointer slider"
                 />
-                <span className="w-12 text-center font-medium">
-                  {watchedValues.leverage}x
-                </span>
+                <div className="flex justify-between text-xs text-tertiary">
+                  <span>1x</span>
+                  <span>125x</span>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Higher leverage increases risk and potential returns
+              <p className="text-xs text-tertiary mt-2">
+                Yüksek kaldıraç risk ve potansiyel getirileri artırır
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Margin Mode</label>
-              <div className="grid grid-cols-2 gap-2">
-                {['cross', 'isolated'].map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setValue('marginMode', mode as any)}
-                    className={`p-3 border rounded-lg text-center transition-colors ${
+            <ModernSelect
+              label="Marj Modu"
+              value={watchedValues.marginMode}
+              onChange={(value) => setValue('marginMode', value)}
+              options={[
+                { value: 'cross', label: 'Cross (Çapraz)' },
+                { value: 'isolated', label: 'Isolated (İzole)' }
+              ]}
+              error={errors.marginMode?.message}
+            />
                       watchedValues.marginMode === mode
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
@@ -650,52 +651,103 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'review':
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Strategy Summary</h3>
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-primary mb-2">Strateji Özeti</h3>
+              <p className="text-tertiary">Lütfen strateji ayarlarınızı kontrol edin</p>
+            </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Basic Info</h4>
-                <div className="mt-1 space-y-1 text-sm">
-                  <div><span className="font-medium">Name:</span> {watchedValues.name}</div>
-                  <div><span className="font-medium">Wallet:</span> 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-surface border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    Temel Bilgiler
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Adı:</span>
+                    <span className="font-medium">{watchedValues.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Cüzdan:</span>
                     <span className="font-mono text-xs">
                       {watchedValues.walletAddress?.slice(0, 6)}...{watchedValues.walletAddress?.slice(-4)}
                     </span>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Exchange</h4>
-                <div className="mt-1 space-y-1 text-sm">
-                  <div><span className="font-medium">Platform:</span> {watchedValues.exchange}</div>
-                  <div><span className="font-medium">Mode:</span> {watchedValues.copyMode}</div>
-                </div>
-              </div>
+              <Card className="bg-surface border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Borsa Ayarları
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Platform:</span>
+                    <span className="font-medium">{watchedValues.exchange}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Mod:</span>
+                    <span className="font-medium">{watchedValues.copyMode}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Futures Config</h4>
-                <div className="mt-1 space-y-1 text-sm">
-                  <div><span className="font-medium">Leverage:</span> {watchedValues.leverage}x</div>
-                  <div><span className="font-medium">Margin:</span> {watchedValues.marginMode}</div>
-                </div>
-              </div>
+              <Card className="bg-surface border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Futures Ayarları
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Kaldıraç:</span>
+                    <span className="font-medium">{watchedValues.leverage}x</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Marj:</span>
+                    <span className="font-medium">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h4 className="font-medium text-sm text-gray-600">Risk Management</h4>
-                <div className="mt-1 space-y-1 text-sm">
-                  <div><span className="font-medium">Stop Loss:</span> {watchedValues.stopLoss || 'None'}%</div>
-                  <div><span className="font-medium">Daily Limit:</span> {watchedValues.dailyLimit || 'None'}</div>
+              <Card className="bg-surface border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Risk Yönetimi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Stop Loss:</span>
+                    <span className="font-medium">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-tertiary">Günlük Limit:</span>
+                    <span className="font-medium">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-surface-light border border-border rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-primary">Strateji Hazır!</h4>
+                  <p className="text-sm text-tertiary mt-1">
+                    Strateji oluşturulduktan sonra belirtilen cüzdan adresini izlemeye başlayacaktır.
+                    Tüm ayarları dikkatlice kontrol edin.
+                  </p>
                 </div>
               </div>
             </div>
-
-            <Alert>
-              <AlertDescription>
-                <strong>Ready to create strategy!</strong> Please review all settings carefully. 
-                Once created, the strategy will start monitoring the specified wallet address.
-              </AlertDescription>
-            </Alert>
           </div>
         );
 
@@ -712,30 +764,16 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold text-primary">Strateji Oluştur</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            <ModernButton
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              leftIcon={<X className="w-4 h-4" />}
+              className="text-tertiary hover:text-primary"
+            />
           </div>
           
-          <div className="space-y-4">
-            {/* Step Navigation */}
-            <div className="step-navigation">
-              {steps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`step ${index === currentStep ? 'active' : index < currentStep ? 'completed' : ''}`}
-                  onClick={() => index < currentStep && setCurrentStep(index)}
-                >
-                  <div className="step-number">
-                    {index < currentStep ? '✓' : index + 1}
-                  </div>
-                  <div className="step-title">{step.title}</div>
-                </div>
-              ))}
-            </div>
-            
-            <StepProgressIndicator steps={stepProgressData} />
-          </div>
+          <StepProgressIndicator steps={stepProgressData} />
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto">
@@ -743,38 +781,64 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
 
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div className="flex items-center gap-3">
                   {currentStep > 0 && (
-                    <Button type="button" variant="outline" onClick={prevStep}>
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
+                    <ModernButton
+                      type="button"
+                      variant="outlined"
+                      size="md"
+                      onClick={prevStep}
+                      leftIcon={<ChevronLeft className="w-4 h-4" />}
+                    >
+                      Geri
+                    </ModernButton>
                   )}
                   
                   {currentStep === 0 && (
-                    <Button type="button" variant="outline" onClick={loadDraft}>
-                      Load Draft
-                    </Button>
+                    <ModernButton
+                      type="button"
+                      variant="outlined"
+                      size="md"
+                      onClick={loadDraft}
+                    >
+                      Taslağı Yükle
+                    </ModernButton>
                   )}
                   
-                  <Button type="button" variant="outline" onClick={saveDraft}>
-                    <Save className="h-4 w-4 mr-1" />
-                    Save Draft
-                    {draftSaved && <span className="ml-1 text-green-600">✓</span>}
-                  </Button>
+                  <ModernButton
+                    type="button"
+                    variant="outlined"
+                    size="md"
+                    onClick={saveDraft}
+                    leftIcon={<Save className="w-4 h-4" />}
+                  >
+                    Taslağı Kaydet
+                    {draftSaved && <span className="ml-1 text-success">✓</span>}
+                  </ModernButton>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-3">
                   {currentStep < steps.length - 1 ? (
-                    <Button type="button" onClick={nextStep}>
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    <ModernButton
+                      type="button"
+                      variant="primary"
+                      size="md"
+                      onClick={nextStep}
+                      rightIcon={<ChevronRight className="w-4 h-4" />}
+                    >
+                      İleri
+                    </ModernButton>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting || !isValid}>
-                      {isSubmitting ? 'Creating...' : 'Create Strategy'}
-                    </Button>
+                    <ModernButton
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      loading={isSubmitting}
+                      disabled={!isValid}
+                    >
+                      {isSubmitting ? 'Oluşturuluyor...' : 'Strateji Oluştur'}
+                    </ModernButton>
                   )}
                 </div>
               </div>
