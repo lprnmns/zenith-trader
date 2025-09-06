@@ -55,6 +55,15 @@ export default {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        // Custom colors for modern design
+        surface: {
+          DEFAULT: 'rgba(30, 41, 59, 0.9)',
+          light: 'rgba(51, 65, 85, 0.8)',
+        },
+        tertiary: '#64748b',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
       },
       keyframes: {
         'accordion-down': {

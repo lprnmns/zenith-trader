@@ -177,4 +177,102 @@ router.get('/check-ADMIN', authService.authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * PUT /api/auth/okx-credentials
+ * Update user's OKX API credentials
+ */
+router.put('/okx-credentials', authService.authenticateToken, async (req, res) => {
+  try {
+    const { okxApiKey, okxApiSecret, okxPassphrase } = req.body;
+    
+    // Validation
+    if (!okxApiKey || !okxApiSecret || !okxPassphrase) {
+      return res.status(400).json({
+        success: false,
+        error: 'All OKX credentials are required'
+      });
+    }
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Update user credentials
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: {
+        okxApiKey,
+        okxApiSecret,
+        okxPassphrase
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        okxApiKey: true,
+        okxApiSecret: true,
+        okxPassphrase: true
+      }
+    });
+
+    await prisma.$disconnect();
+
+    res.json({
+      success: true,
+      message: 'OKX credentials updated successfully',
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('[Auth API] OKX credentials update error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update OKX credentials'
+    });
+  }
+});
+
+/**
+ * GET /api/auth/okx-credentials
+ * Get user's OKX API credentials
+ */
+router.get('/okx-credentials', authService.authenticateToken, async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        okxApiKey: true,
+        okxApiSecret: true,
+        okxPassphrase: true
+      }
+    });
+
+    await prisma.$disconnect();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: user
+    });
+
+  } catch (error) {
+    console.error('[Auth API] OKX credentials fetch error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch OKX credentials'
+    });
+  }
+});
+
 module.exports = router;

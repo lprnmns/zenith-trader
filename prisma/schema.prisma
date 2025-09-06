@@ -24,6 +24,11 @@ model User {
   lastLoginAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  // OKX API Credentials
+  okxApiKey    String?
+  okxApiSecret String?
+  okxPassphrase String?
 
   strategies        Strategy[]
   watchedWallets   WatchedWallet[]

@@ -53,6 +53,10 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+    port: 5177,
+    hmr: {
+      overlay: false,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
