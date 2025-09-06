@@ -15,6 +15,52 @@ import ModernButton from './ModernButton';
 import { useAuthStore } from '@/stores/authStore';
 import '@/styles/strategy-wizard.css';
 
+// Wizard steps configuration
+const wizardSteps = [
+  {
+    id: 1,
+    title: 'Temel Bilgiler',
+    description: 'Strateji adı ve cüzdan adresi',
+    fields: ['name', 'walletAddress']
+  },
+  {
+    id: 2,
+    title: 'Borsa Seçimi',
+    description: 'İşlem yapılacak borsayı seçin',
+    fields: ['exchange', 'copyMode']
+  },
+  {
+    id: 3,
+    title: 'Futures Ayarları',
+    description: 'Kaldıraç ve marj modu',
+    fields: ['leverage', 'marginMode']
+  },
+  {
+    id: 4,
+    title: 'Pozisyon Boyutu',
+    description: 'İşlem büyüklüğü ayarları',
+    fields: ['sizingMethod', 'positionSize', 'amountPerTrade', 'percentageToCopy']
+  },
+  {
+    id: 5,
+    title: 'Risk Yönetimi',
+    description: 'Stop loss ve günlük limit',
+    fields: ['stopLoss', 'dailyLimit']
+  },
+  {
+    id: 6,
+    title: 'Sembol Filtreleri',
+    description: 'İşlem yapılacak tokenlar',
+    fields: ['allowedTokens', 'minTradeSize', 'maxTradeSize']
+  },
+  {
+    id: 7,
+    title: 'Çalıştırma Ayarları',
+    description: 'İşlem yürütme parametreleri',
+    fields: ['executionDelay', 'maxSlippage', 'retryAttempts', 'enablePartialFills']
+  }
+];
+
 // Strategy validation schema
 const strategySchema = z.object({
   name: z.string().min(1, 'Strategy name is required').max(50, 'Name too long'),
@@ -55,6 +101,11 @@ const strategySchema = z.object({
   enableTradeNotifications: z.boolean().default(true),
   enableErrorNotifications: z.boolean().default(true),
   enableDailyReports: z.boolean().default(false),
+  
+  // OKX Credentials
+  apiKey: z.string().optional(),
+  apiSecret: z.string().optional(),
+  passphrase: z.string().optional(),
 });
 
 type StrategyFormData = z.infer<typeof strategySchema>;
@@ -277,9 +328,9 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             {/* OKX Credentials Auto-fill */}
             {watchedValues.exchange === 'OKX' && (
-              <div className="modern-card p-4 border border-primary/20 bg-primary/5">
+              <div className="modern-card p-4 border border-emerald-400/20 bg-emerald-400/5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-medium text-primary">OKX Kimlik Bilgileri</h3>
+                  <h3 className="text-lg font-medium text-emerald-400">OKX Kimlik Bilgileri</h3>
                   <button
                     type="button"
                     onClick={handleAutoFillOKXCredentials}
@@ -299,20 +350,20 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 {credentialsInfo && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-secondary">API Key:</span>
-                      <span className="text-sm font-mono text-primary">
+                      <span className="text-sm text-blue-400">API Key:</span>
+                      <span className="text-sm font-mono text-emerald-400">
                         {credentialsInfo.okxApiKey ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-secondary">API Secret:</span>
-                      <span className="text-sm font-mono text-primary">
+                      <span className="text-sm text-blue-400">API Secret:</span>
+                      <span className="text-sm font-mono text-emerald-400">
                         {credentialsInfo.okxApiSecret ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-secondary">Passphrase:</span>
-                      <span className="text-sm font-mono text-primary">
+                      <span className="text-sm text-blue-400">Passphrase:</span>
+                      <span className="text-sm font-mono text-emerald-400">
                         {credentialsInfo.okxPassphrase ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
                       </span>
                     </div>
@@ -326,7 +377,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                         >
                           Bu Bilgileri Kullan
                         </button>
-                        <span className="text-xs text-tertiary">
+                        <span className="text-xs text-slate-400">
                           Kayıtlı OKX kimlik bilgileri stratejiye eklenecektir
                         </span>
                       </div>
@@ -358,6 +409,42 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               ]}
               error={errors.copyMode?.message}
             />
+
+            {/* OKX Credentials Input Fields */}
+            {watchedValues.exchange === 'OKX' && (
+              <div className="space-y-4 mt-4 p-4 border border-emerald-400/20 bg-emerald-400/5 rounded-lg">
+                <h4 className="text-sm font-medium text-emerald-400 mb-3">OKX API Bilgileri</h4>
+                
+                <ModernInput
+                  label="API Key"
+                  placeholder="OKX API Key"
+                  value={watchedValues.apiKey || ''}
+                  onChange={(e) => setValue('apiKey', e.target.value)}
+                  error={errors.apiKey?.message}
+                  helperText="OKX hesabınızdan aldığınız API Key"
+                />
+                
+                <ModernInput
+                  label="API Secret"
+                  placeholder="OKX API Secret"
+                  value={watchedValues.apiSecret || ''}
+                  onChange={(e) => setValue('apiSecret', e.target.value)}
+                  error={errors.apiSecret?.message}
+                  helperText="OKX hesabınızdan aldığınız API Secret"
+                  type="password"
+                />
+                
+                <ModernInput
+                  label="Passphrase"
+                  placeholder="OKX Passphrase"
+                  value={watchedValues.passphrase || ''}
+                  onChange={(e) => setValue('passphrase', e.target.value)}
+                  error={errors.passphrase?.message}
+                  helperText="API oluştururken belirlediğiniz passphrase"
+                  type="password"
+                />
+              </div>
+            )}
           </div>
         );
 
@@ -376,12 +463,12 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   {...methods.register('leverage', { valueAsNumber: true })}
                   className="w-full h-2 bg-surface-light rounded-lg appearance-none cursor-pointer slider"
                 />
-                <div className="flex justify-between text-xs text-tertiary">
+                <div className="flex justify-between text-xs text-slate-400">
                   <span>1x</span>
                   <span>125x</span>
                 </div>
               </div>
-              <p className="text-xs text-tertiary mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 Yüksek kaldıraç risk ve potansiyel getirileri artırır
               </p>
             </div>
@@ -396,30 +483,6 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               ]}
               error={errors.marginMode?.message}
             />
-                      watchedValues.marginMode === mode
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium capitalize">{mode}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {mode === 'cross' ? 'Shared margin' : 'Isolated margin'}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                {...methods.register('enableLiquidationProtection')}
-                id="liquidation-protection"
-              />
-              <label htmlFor="liquidation-protection" className="text-sm">
-                Enable liquidation protection
-              </label>
-            </div>
           </div>
         );
 
@@ -653,7 +716,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-primary mb-2">Strateji Özeti</h3>
-              <p className="text-tertiary">Lütfen strateji ayarlarınızı kontrol edin</p>
+              <p className="text-slate-400">Lütfen strateji ayarlarınızı kontrol edin</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -666,11 +729,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Adı:</span>
+                    <span className="text-slate-400">Adı:</span>
                     <span className="font-medium">{watchedValues.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Cüzdan:</span>
+                    <span className="text-slate-400">Cüzdan:</span>
                     <span className="font-mono text-xs">
                       {watchedValues.walletAddress?.slice(0, 6)}...{watchedValues.walletAddress?.slice(-4)}
                     </span>
@@ -687,11 +750,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Platform:</span>
+                    <span className="text-slate-400">Platform:</span>
                     <span className="font-medium">{watchedValues.exchange}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Mod:</span>
+                    <span className="text-slate-400">Mod:</span>
                     <span className="font-medium">{watchedValues.copyMode}</span>
                   </div>
                 </CardContent>
@@ -706,11 +769,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Kaldıraç:</span>
+                    <span className="text-slate-400">Kaldıraç:</span>
                     <span className="font-medium">{watchedValues.leverage}x</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Marj:</span>
+                    <span className="text-slate-400">Marj:</span>
                     <span className="font-medium">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
                   </div>
                 </CardContent>
@@ -725,11 +788,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Stop Loss:</span>
+                    <span className="text-slate-400">Stop Loss:</span>
                     <span className="font-medium">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-tertiary">Günlük Limit:</span>
+                    <span className="text-slate-400">Günlük Limit:</span>
                     <span className="font-medium">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
                   </div>
                 </CardContent>
@@ -741,7 +804,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CheckCircle className="w-5 h-5 text-success mt-0.5" />
                 <div>
                   <h4 className="font-medium text-primary">Strateji Hazır!</h4>
-                  <p className="text-sm text-tertiary mt-1">
+                  <p className="text-sm text-slate-400 mt-1">
                     Strateji oluşturulduktan sonra belirtilen cüzdan adresini izlemeye başlayacaktır.
                     Tüm ayarları dikkatlice kontrol edin.
                   </p>
@@ -769,7 +832,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               size="sm"
               onClick={onClose}
               leftIcon={<X className="w-4 h-4" />}
-              className="text-tertiary hover:text-primary"
+              className="text-slate-400 hover:text-primary"
             />
           </div>
           

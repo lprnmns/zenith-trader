@@ -198,16 +198,16 @@ const ModernInput: React.FC<ModernInputProps> = ({
           className={cn(
             'block text-sm font-medium transition-colors',
             {
-              'text-primary': isFocused,
-              'text-error': hasError,
-              'text-success': hasSuccess,
-              'text-tertiary': !isFocused && !hasError && !hasSuccess,
-              'text-primary': disabled,
+              'text-emerald-400': isFocused,
+              'text-red-400': hasError,
+              'text-green-400': hasSuccess,
+              'text-slate-400': !isFocused && !hasError && !hasSuccess,
+              'text-slate-400/50': disabled,
             }
           )}
         >
           {label}
-          {required && <span className="text-error ml-1">*</span>}
+          {required && <span className="text-red-400 ml-1">*</span>}
         </label>
       )}
 
