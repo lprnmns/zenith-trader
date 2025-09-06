@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import StepProgressIndicator from './StepProgressIndicator';
 import '@/styles/strategy-wizard.css';
 
 // Strategy validation schema
@@ -81,6 +82,15 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [formData, setFormData] = useState<Partial<StrategyFormData>>({});
+
+  // Step progress data
+  const stepProgressData = wizardSteps.map((step, index) => ({
+    id: index + 1,
+    title: step.title,
+    description: step.description,
+    completed: index < currentStep,
+    active: index === currentStep,
+  }));
 
   const methods = useForm<StrategyFormData>({
     resolver: zodResolver(strategySchema),
@@ -627,17 +637,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               ))}
             </div>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-primary">{steps[currentStep].title}</h2>
-                <p className="text-sm text-secondary">{steps[currentStep].description}</p>
-              </div>
-              <Badge variant="outline" className="modern-badge primary">
-                Adım {currentStep + 1} / {steps.length}
-              </Badge>
-            </div>
-            
-            <Progress value={((currentStep + 1) / steps.length) * 100} className="modern-progress" />
+            <StepProgressIndicator steps={stepProgressData} />
           </div>
         </CardHeader>
 
