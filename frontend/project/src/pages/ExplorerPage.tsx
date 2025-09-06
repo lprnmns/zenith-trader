@@ -43,36 +43,60 @@ export function ExplorerPage() {
   const handleAnalyze = async () => {
     if (!walletAddress.trim()) return;
     
-    // Clear previous data before starting new analysis
+    console.log('[ExplorerPage] Starting analysis for:', walletAddress);
+    
+    // Force clear all previous data
     setPerformanceData([]);
     setTradeHistory([]);
     setSummary(null);
     setExpanded({});
+    setHasAnalyzed(false);
+    
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     setIsAnalyzing(true);
     try {
+      console.log('[ExplorerPage] Fetching data from API...');
       const res = await getWalletAnalysis(walletAddress.trim());
       const data = res.data || {};
       
-      // Set new data with proper validation
-      setSummary(data.summary || null);
+      console.log('[ExplorerPage] API Response:', {
+        summary: data.summary,
+        chartLength: data.cumulativePnlChart?.length,
+        tradeHistoryLength: data.tradeHistory?.length
+      });
       
-      // Process chart data with date formatting
-      const chart = Array.isArray(data.cumulativePnlChart) 
-        ? data.cumulativePnlChart.map((p: any) => ({ 
-            date: p.date || '', 
+      // Process and set summary with explicit new object
+      const newSummary = data.summary ? { ...data.summary } : null;
+      setSummary(newSummary);
+      
+      // Process chart data with validation and new array
+      const newChart = Array.isArray(data.cumulativePnlChart) 
+        ? [...data.cumulativePnlChart].map((p: any, idx: number) => ({ 
+            date: p.date || `Point ${idx}`, 
             value: typeof p.cumulativePnl === 'number' ? p.cumulativePnl : 0 
           })) 
         : [];
-      setPerformanceData(chart);
       
-      // Process trade history
-      const trades = Array.isArray(data.tradeHistory) ? data.tradeHistory : [];
-      setTradeHistory(trades);
+      console.log('[ExplorerPage] New chart data:', newChart.length, 'points');
+      console.log('[ExplorerPage] Chart sample:', newChart.slice(0, 3));
+      
+      // Force update with new array reference
+      setPerformanceData([...newChart]);
+      
+      // Process trade history with new array
+      const newTrades = Array.isArray(data.tradeHistory) 
+        ? [...data.tradeHistory] 
+        : [];
+      
+      console.log('[ExplorerPage] New trade history:', newTrades.length, 'trades');
+      setTradeHistory([...newTrades]);
       
       setHasAnalyzed(true);
+      console.log('[ExplorerPage] Analysis complete');
     } catch (e) {
-      console.error('Analysis error:', e);
+      console.error('[ExplorerPage] Analysis error:', e);
       setPerformanceData([]);
       setTradeHistory([]);
       setSummary(null);
@@ -108,15 +132,26 @@ export function ExplorerPage() {
     return [...list].sort((a, b) => (byKey(b) as number) - (byKey(a) as number));
   }, [suggested, sortBy]);
 
-  // Summary - Use fresh data for each analysis
-  const totalPnL = React.useMemo(() => {
-    if (performanceData.length === 0) return 0;
-    return safeNumber(performanceData[performanceData.length - 1]?.value ?? 0);
-  }, [performanceData]);
+  // Summary - Direct calculations from state
+  const totalPnL = performanceData.length > 0 
+    ? safeNumber(performanceData[performanceData.length - 1]?.value ?? 0) 
+    : 0;
   
-  const winRate = React.useMemo(() => safeNumber(summary?.winRatePercent ?? 0), [summary]);
-  const totalTradesCount = React.useMemo(() => safeNumber(summary?.totalTrades ?? 0), [summary]);
-  const avgTradeSize = React.useMemo(() => safeNumber(summary?.avgTradeSizeUsd ?? 0), [summary]);
+  const winRate = safeNumber(summary?.winRatePercent ?? 0);
+  const totalTradesCount = safeNumber(summary?.totalTrades ?? 0);
+  const avgTradeSize = safeNumber(summary?.avgTradeSizeUsd ?? 0);
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[ExplorerPage] State updated:', {
+      performanceDataLength: performanceData.length,
+      totalPnL,
+      winRate,
+      totalTradesCount,
+      avgTradeSize,
+      hasAnalyzed
+    });
+  }, [performanceData, summary, hasAnalyzed]);
   const toggleExpand = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
@@ -256,29 +291,34 @@ export function ExplorerPage() {
 
       {hasAnalyzed && !isAnalyzing && (
         <>
-          {/* Wallet Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+          {/* Metrics Cards - Force re-render with keys */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" key={`metrics-${walletAddress}-${Date.now()}`}>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`pnl-${totalPnL}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total PnL (Cumulative)</CardTitle></CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(totalPnL)}</div>
+                <div className={`text-2xl font-bold mb-1 ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(totalPnL)}
+                </div>
+                <p className="text-xs text-slate-400">
+                  {performanceData.length > 0 ? `From ${performanceData.length} data points` : 'No data'}
+                </p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`winrate-${winRate}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Win Rate</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{formatPercentage(winRate).replace('+','')}</div>
                 <p className="text-xs text-slate-400">Over realized sales</p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`trades-${totalTradesCount}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total Trades</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{totalTradesCount}</div>
                 <p className="text-xs text-slate-400">Realized (SELL) trades</p>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`avgsize-${avgTradeSize}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Avg Trade Size</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{formatCurrency(avgTradeSize)}</div>
@@ -300,9 +340,17 @@ export function ExplorerPage() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 mb-2">
+                  Data points: {performanceData.length} | 
+                  Last value: ${performanceData[performanceData.length - 1]?.value?.toFixed(2) || 0} |
+                  Last update: {new Date().toLocaleTimeString()}
+                </div>
+              )}
               <div className="h-80">
                 {performanceData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%" key={`chart-${walletAddress}-${Date.now()}`}>
+                  <ResponsiveContainer width="100%" height="100%" key={`chart-${walletAddress}-${performanceData.length}-${performanceData[0]?.date}-${performanceData[performanceData.length - 1]?.value}`}>
                     <LineChart data={performanceData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis 
