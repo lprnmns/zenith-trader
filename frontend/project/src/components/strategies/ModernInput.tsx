@@ -1,143 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes } from 'react';
-import { AlertCircle, CheckCircle, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface ModernInputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  icon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  validateOnChange?: boolean;
-  validationRule?: {
-    pattern?: RegExp;
-    min?: number;
-    max?: number;
-  };
-  showSuccess?: boolean;
-}
-
-const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
-  (
-    {
-      label,
-      error,
-      helperText,
-      icon,
-      rightIcon,
-      validateOnChange,
-      validationRule,
-      showSuccess = false,
-      className,
-      ...props
-    },
-    ref
-  ) => {
-    const [isValid, setIsValid] = React.useState(false);
-    const [isFocused, setIsFocused] = React.useState(false);
-
-    const handleValidation = (value: string) => {
-      if (!validationRule || !validateOnChange) return;
-
-      let valid = true;
-
-      if (validationRule.pattern) {
-        valid = valid && validationRule.pattern.test(value);
-      }
-
-      if (validationRule.min !== undefined) {
-        valid = valid && value.length >= validationRule.min;
-      }
-
-      if (validationRule.max !== undefined) {
-        valid = valid && value.length <= validationRule.max;
-      }
-
-      setIsValid(valid && value.length > 0);
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (validateOnChange) {
-        handleValidation(e.target.value);
-      }
-      if (props.onChange) {
-        props.onChange(e);
-      }
-    };
-
-    return (
-      <div className="modern-input-wrapper">
-        {label && (
-          <label className="modern-input-label">
-            {label}
-            {props.required && <span className="text-red-400 ml-1">*</span>}
-          </label>
-        )}
-        
-        <div className="relative">
-          {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
-              {icon}
-            </div>
-          )}
-          
-          <input
-            ref={ref}
-            className={cn(
-              'modern-input',
-              icon && 'pl-10',
-              rightIcon && 'pr-10',
-              error && 'error',
-              isValid && showSuccess && 'border-green-500',
-              className
-            )}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={handleChange}
-            {...props}
-          />
-          
-          {rightIcon && !error && !isValid && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400">
-              {rightIcon}
-            </div>
-          )}
-          
-          {error && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400">
-              <AlertCircle className="w-5 h-5" />
-            </div>
-          )}
-          
-          {isValid && showSuccess && !error && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-          )}
-        </div>
-        
-        {error && (
-          <span className="modern-input-error flex items-center gap-1 mt-1">
-            {error}
-          </span>
-        )}
-        
-        {helperText && !error && (
-          <span className="modern-input-helper flex items-center gap-1 mt-1">
-            <Info className="w-3 h-3" />
-            {helperText}
-          </span>
-        )}
-      </div>
-    );
-  }
-);
-
-ModernInput.displayName = 'ModernInput';
-
-export default ModernInput;
-
-import React, { useState } from 'react';
+import React, { useState, forwardRef, InputHTMLAttributes } from 'react';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -288,9 +149,9 @@ const ModernInput = React.forwardRef<HTMLInputElement, ModernInputProps>(({
   };
 
   const variantClasses = {
-    default: 'bg-surface-light border-border focus:bg-surface',
-    filled: 'bg-surface border-transparent focus:bg-surface-light',
-    outlined: 'bg-transparent border-border focus:bg-surface-light',
+    default: 'border-gray-600 focus:border-emerald-400',
+    filled: 'border-transparent focus:border-emerald-400',
+    outlined: 'border-gray-600 focus:border-emerald-400',
   };
 
   const stateClasses = cn(
@@ -385,6 +246,11 @@ const ModernInput = React.forwardRef<HTMLInputElement, ModernInputProps>(({
             },
             className
           )}
+          style={{
+            backgroundColor: 'rgba(51, 65, 85, 0.7)',
+            color: '#e2e8f0',
+            borderColor: hasError ? '#ef4444' : 'rgba(148, 163, 184, 0.4)'
+          }}
         />
 
         {/* Right side elements */}

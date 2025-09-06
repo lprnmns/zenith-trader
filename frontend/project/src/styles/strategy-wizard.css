@@ -117,28 +117,28 @@
 .modern-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(30, 41, 59, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(51, 65, 85, 0.6) !important;
+  border: 2px solid rgba(148, 163, 184, 0.3) !important;
   border-radius: 0.75rem;
-  color: var(--neutral-100);
+  color: #e2e8f0 !important;
   font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
 }
 
 .modern-input:hover {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(51, 65, 85, 0.8) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
 }
 
 .modern-input:focus {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  background: rgba(51, 65, 85, 0.9) !important;
+  border-color: var(--primary-400) !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2) !important;
 }
 
 .modern-input::placeholder {
-  color: var(--neutral-500);
+  color: #94a3b8 !important;
 }
 
 .modern-input.error {
@@ -163,16 +163,16 @@
 .modern-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(30, 41, 59, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(51, 65, 85, 0.6) !important;
+  border: 2px solid rgba(148, 163, 184, 0.3) !important;
   border-radius: 0.75rem;
-  color: var(--neutral-100);
+  color: #e2e8f0 !important;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.5rem center;
   background-repeat: no-repeat;
   background-size: 1.5em 1.5em;
@@ -180,14 +180,14 @@
 }
 
 .modern-select:hover {
-  background-color: rgba(30, 41, 59, 0.7);
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(51, 65, 85, 0.8) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
 }
 
 .modern-select:focus {
-  background-color: rgba(30, 41, 59, 0.8);
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  border-color: var(--primary-400) !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2) !important;
 }
 
 /* Button Styles */

@@ -295,37 +295,61 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-primary mb-2">Strateji Bilgileri</h3>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Strateji Bilgileri</h3>
               <p className="text-sm text-gray-400">Kopya ticaret stratejiniz için temel bilgileri girin</p>
             </div>
 
-            <ModernInput
-              label="Strateji Adı"
-              placeholder="Örnek: BTC Takip Stratejisi"
-              {...methods.register('name')}
-              error={errors.name?.message}
-              validateOnChange={true}
-              validationRule={{
-                pattern: /^[a-zA-Z0-9\s\-_]+$/,
-                min: 1,
-                max: 50
-              }}
-              className="text-lg"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Strateji Adı</label>
+              <input
+                type="text"
+                placeholder="Örnek: BTC Takip Stratejisi"
+                {...methods.register('name')}
+                className="w-full px-4 py-3 text-lg rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.7)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.5)';
+                }}
+              />
+              {errors.name && (
+                <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>
+              )}
+            </div>
             
-            <ModernInput
-              label="Cüzdan Adresi"
-              placeholder="0x..."
-              {...methods.register('walletAddress')}
-              error={errors.walletAddress?.message}
-              validateOnChange={true}
-              validationRule={{
-                pattern: /^0x[a-fA-F0-9]{40}$/,
-                min: 42,
-                max: 42
-              }}
-              className="font-mono"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Cüzdan Adresi</label>
+              <input
+                type="text"
+                placeholder="0x..."
+                {...methods.register('walletAddress')}
+                className="w-full px-4 py-3 font-mono rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.7)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.5)';
+                }}
+              />
+              {errors.walletAddress && (
+                <p className="text-red-400 text-sm mt-1">{errors.walletAddress.message}</p>
+              )}
+            </div>
           </div>
         );
 
@@ -333,7 +357,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-primary mb-2">Borsa Ayarları</h3>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Borsa Ayarları</h3>
               <p className="text-sm text-gray-400">İşlem yapacağınız borsayı ve kopyalama modunu seçin</p>
             </div>
 
@@ -399,62 +423,127 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             )}
 
-            <ModernSelect
-              label="Borsa Seçimi"
-              value={watchedValues.exchange}
-              onChange={(value) => setValue('exchange', value)}
-              options={[
-                { value: 'OKX', label: 'OKX' },
-                { value: 'Binance', label: 'Binance' },
-                { value: 'Bybit', label: 'Bybit' }
-              ]}
-              error={errors.exchange?.message}
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Borsa Seçimi</label>
+              <select
+                value={watchedValues.exchange}
+                onChange={(e) => setValue('exchange', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all cursor-pointer"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.7)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.5)';
+                }}
+              >
+                <option value="OKX">OKX</option>
+                <option value="Binance">Binance</option>
+                <option value="Bybit">Bybit</option>
+              </select>
+              {errors.exchange && (
+                <p className="text-red-400 text-sm mt-1">{errors.exchange.message}</p>
+              )}
+            </div>
 
-            <ModernSelect
-              label="Kopyalama Modu"
-              value={watchedValues.copyMode}
-              onChange={(value) => setValue('copyMode', value)}
-              options={[
-                { value: 'Perpetual', label: 'Perpetual (Sürekli)' },
-                { value: 'Spot', label: 'Spot' }
-              ]}
-              error={errors.copyMode?.message}
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Kopyalama Modu</label>
+              <select
+                value={watchedValues.copyMode}
+                onChange={(e) => setValue('copyMode', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all cursor-pointer"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.7)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+                  e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.5)';
+                }}
+              >
+                <option value="Perpetual">Perpetual (Sürekli)</option>
+                <option value="Spot">Spot</option>
+              </select>
+              {errors.copyMode && (
+                <p className="text-red-400 text-sm mt-1">{errors.copyMode.message}</p>
+              )}
+            </div>
 
             {/* OKX Credentials Input Fields */}
             {watchedValues.exchange === 'OKX' && (
               <div className="space-y-4 mt-4 p-4 border border-emerald-400/20 bg-emerald-400/5 rounded-lg">
                 <h4 className="text-sm font-medium text-emerald-400 mb-3">OKX API Bilgileri</h4>
                 
-                <ModernInput
-                  label="API Key"
-                  placeholder="OKX API Key"
-                  value={watchedValues.apiKey || ''}
-                  onChange={(e) => setValue('apiKey', e.target.value)}
-                  error={errors.apiKey?.message}
-                  helperText="OKX hesabınızdan aldığınız API Key"
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">API Key</label>
+                  <input
+                    type="text"
+                    placeholder="OKX API Key"
+                    value={watchedValues.apiKey || ''}
+                    onChange={(e) => setValue('apiKey', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                    style={{
+                      backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                      color: '#f3f4f6',
+                      border: '2px solid rgba(156, 163, 175, 0.3)'
+                    }}
+                  />
+                  <p className="text-xs text-gray-400">OKX hesabınızdan aldığınız API Key</p>
+                  {errors.apiKey && (
+                    <p className="text-red-400 text-sm">{errors.apiKey.message}</p>
+                  )}
+                </div>
                 
-                <ModernInput
-                  label="API Secret"
-                  placeholder="OKX API Secret"
-                  value={watchedValues.apiSecret || ''}
-                  onChange={(e) => setValue('apiSecret', e.target.value)}
-                  error={errors.apiSecret?.message}
-                  helperText="OKX hesabınızdan aldığınız API Secret"
-                  type="password"
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">API Secret</label>
+                  <input
+                    type="password"
+                    placeholder="OKX API Secret"
+                    value={watchedValues.apiSecret || ''}
+                    onChange={(e) => setValue('apiSecret', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                    style={{
+                      backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                      color: '#f3f4f6',
+                      border: '2px solid rgba(156, 163, 175, 0.3)'
+                    }}
+                  />
+                  <p className="text-xs text-gray-400">OKX hesabınızdan aldığınız API Secret</p>
+                  {errors.apiSecret && (
+                    <p className="text-red-400 text-sm">{errors.apiSecret.message}</p>
+                  )}
+                </div>
                 
-                <ModernInput
-                  label="Passphrase"
-                  placeholder="OKX Passphrase"
-                  value={watchedValues.passphrase || ''}
-                  onChange={(e) => setValue('passphrase', e.target.value)}
-                  error={errors.passphrase?.message}
-                  helperText="API oluştururken belirlediğiniz passphrase"
-                  type="password"
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Passphrase</label>
+                  <input
+                    type="password"
+                    placeholder="OKX Passphrase"
+                    value={watchedValues.passphrase || ''}
+                    onChange={(e) => setValue('passphrase', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                    style={{
+                      backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                      color: '#f3f4f6',
+                      border: '2px solid rgba(156, 163, 175, 0.3)'
+                    }}
+                  />
+                  <p className="text-xs text-gray-400">API oluştururken belirlediğiniz passphrase</p>
+                  {errors.passphrase && (
+                    <p className="text-red-400 text-sm">{errors.passphrase.message}</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -464,13 +553,13 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-primary mb-2">Futures Ayarları</h3>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Futures Ayarları</h3>
               <p className="text-sm text-gray-400">Kaldıraç ve marj modunu ayarlayın</p>
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+            <div className="border border-gray-600 rounded-xl p-6" style={{ backgroundColor: 'rgba(71, 85, 105, 0.3)' }}>
               <div className="flex items-center justify-between mb-4">
-                <label className="text-lg font-medium text-primary">
+                <label className="text-lg font-medium text-gray-200">
                   Kaldıraç: <span className="text-orange-400">{watchedValues.leverage}x</span>
                 </label>
                 <div className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-medium">
@@ -500,16 +589,25 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             </div>
 
-            <ModernSelect
-              label="Marj Modu"
-              value={watchedValues.marginMode}
-              onChange={(value) => setValue('marginMode', value)}
-              options={[
-                { value: 'cross', label: 'Cross (Çapraz)' },
-                { value: 'isolated', label: 'Isolated (İzole)' }
-              ]}
-              error={errors.marginMode?.message}
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Marj Modu</label>
+              <select
+                value={watchedValues.marginMode}
+                onChange={(e) => setValue('marginMode', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all cursor-pointer"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+              >
+                <option value="cross">Cross (Çapraz)</option>
+                <option value="isolated">Isolated (İzole)</option>
+              </select>
+              {errors.marginMode && (
+                <p className="text-red-400 text-sm mt-1">{errors.marginMode.message}</p>
+              )}
+            </div>
           </div>
         );
 
@@ -517,18 +615,19 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Sizing Method</label>
+              <label className="block text-sm font-medium mb-2 text-gray-300">Sizing Method</label>
               <div className="grid grid-cols-2 gap-2">
                 {['Fixed Amount', 'Percentage of Wallet\'s Trade'].map((method) => (
                   <button
                     key={method}
                     type="button"
                     onClick={() => setValue('sizingMethod', method as any)}
-                    className={`p-3 border rounded-lg text-center transition-colors ${
-                      watchedValues.sizingMethod === method
-                        ? 'border-blue-500 bg-blue-500/20'
-                        : 'border-gray-600 hover:border-gray-500'
-                    }`}
+                    style={{
+                      backgroundColor: watchedValues.sizingMethod === method ? 'rgba(59, 130, 246, 0.3)' : 'rgba(71, 85, 105, 0.5)',
+                      color: '#f3f4f6',
+                      border: watchedValues.sizingMethod === method ? '2px solid #3b82f6' : '2px solid rgba(156, 163, 175, 0.3)'
+                    }}
+                    className="p-3 rounded-lg text-center transition-colors hover:bg-opacity-70"
                   >
                     <div className="font-medium">{method}</div>
                   </button>
@@ -537,54 +636,84 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
 
             {watchedValues.sizingMethod === 'Fixed Amount' ? (
-              <ModernInput
-                label="İşlem Başına Tutar (USD)"
-                type="number"
-                placeholder="100"
-                min={1}
-                {...methods.register('amountPerTrade', { valueAsNumber: true })}
-                error={errors.amountPerTrade?.message}
-                helperText="Her bir işlem için kullanılacak USD tutarı"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">İşlem Başına Tutar (USD)</label>
+                <input
+                  type="number"
+                  placeholder="100"
+                  min={1}
+                  {...methods.register('amountPerTrade', { valueAsNumber: true })}
+                  className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                  style={{
+                    backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                    color: '#f3f4f6',
+                    border: '2px solid rgba(156, 163, 175, 0.3)'
+                  }}
+                />
+                <p className="text-xs text-gray-400">Her bir işlem için kullanılacak USD tutarı</p>
+                {errors.amountPerTrade && (
+                  <p className="text-red-400 text-sm">{errors.amountPerTrade.message}</p>
+                )}
+              </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium mb-1">Percentage to Copy (%)</label>
+                <label className="block text-sm font-medium mb-1 text-gray-300">Percentage to Copy (%)</label>
                 <div className="flex items-center space-x-2">
                   <input
                     type="range"
                     min="1"
                     max="100"
                     {...methods.register('percentageToCopy', { valueAsNumber: true })}
-                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
+                    className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
                   />
-                  <span className="w-12 text-center font-medium">
+                  <span className="w-12 text-center font-medium text-gray-300">
                     {watchedValues.percentageToCopy}%
                   </span>
                 </div>
               </div>
             )}
 
-            <ModernInput
-              label="Stop Loss (%)"
-              type="number"
-              placeholder="5.0"
-              min={0}
-              max={100}
-              step={0.1}
-              {...methods.register('stopLoss', { valueAsNumber: true })}
-              error={errors.stopLoss?.message}
-              helperText="Bu kayıp yüzdesinde pozisyon otomatik kapanır"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Stop Loss (%)</label>
+              <input
+                type="number"
+                placeholder="5.0"
+                min={0}
+                max={100}
+                step={0.1}
+                {...methods.register('stopLoss', { valueAsNumber: true })}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+              />
+              <p className="text-xs text-gray-400">Bu kayıp yüzdesinde pozisyon otomatik kapanır</p>
+              {errors.stopLoss && (
+                <p className="text-red-400 text-sm">{errors.stopLoss.message}</p>
+              )}
+            </div>
 
-            <ModernInput
-              label="Günlük İşlem Limiti"
-              type="number"
-              placeholder="10"
-              min={1}
-              {...methods.register('dailyLimit', { valueAsNumber: true })}
-              error={errors.dailyLimit?.message}
-              helperText="Günlük maksimum işlem sayısı"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Günlük İşlem Limiti</label>
+              <input
+                type="number"
+                placeholder="10"
+                min={1}
+                {...methods.register('dailyLimit', { valueAsNumber: true })}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+              />
+              <p className="text-xs text-gray-400">Günlük maksimum işlem sayısı</p>
+              {errors.dailyLimit && (
+                <p className="text-red-400 text-sm">{errors.dailyLimit.message}</p>
+              )}
+            </div>
           </div>
         );
 
@@ -592,10 +721,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Allowed Tokens</label>
+              <label className="block text-sm font-medium mb-3 text-gray-300">Allowed Tokens</label>
               <div className="space-y-2">
                 {['BTC', 'ETH', 'SOL', 'AVAX', 'MATIC', 'UNI', 'LINK', 'AAVE'].map((token) => (
-                  <label key={token} className="flex items-center space-x-2">
+                  <label key={token} className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                     <input
                       type="checkbox"
                       checked={watchedValues.allowedTokens?.includes(token) || false}
@@ -606,33 +735,48 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                           : currentTokens.filter(t => t !== token);
                         setValue('allowedTokens', newTokens);
                       }}
+                      className="w-5 h-5 rounded accent-emerald-500"
                     />
-                    <span className="text-sm">{token}</span>
+                    <span className="text-sm text-gray-300 font-medium">{token}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <ModernInput
-                label="Min İşlem Boyutu (USD)"
-                type="number"
-                placeholder="10"
-                min={0}
-                {...methods.register('minTradeSize', { valueAsNumber: true })}
-                error={errors.minTradeSize?.message}
-                helperText="Minimum işlem tutarı"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Min İşlem Boyutu (USD)</label>
+                <input
+                  type="number"
+                  placeholder="10"
+                  min={0}
+                  {...methods.register('minTradeSize', { valueAsNumber: true })}
+                  className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                  style={{
+                    backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                    color: '#f3f4f6',
+                    border: '2px solid rgba(156, 163, 175, 0.3)'
+                  }}
+                />
+                <p className="text-xs text-gray-400">Minimum işlem tutarı</p>
+              </div>
               
-              <ModernInput
-                label="Max İşlem Boyutu (USD)"
-                type="number"
-                placeholder="1000"
-                min={0}
-                {...methods.register('maxTradeSize', { valueAsNumber: true })}
-                error={errors.maxTradeSize?.message}
-                helperText="Maksimum işlem tutarı"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Max İşlem Boyutu (USD)</label>
+                <input
+                  type="number"
+                  placeholder="1000"
+                  min={0}
+                  {...methods.register('maxTradeSize', { valueAsNumber: true })}
+                  className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                  style={{
+                    backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                    color: '#f3f4f6',
+                    border: '2px solid rgba(156, 163, 175, 0.3)'
+                  }}
+                />
+                <p className="text-xs text-gray-400">Maksimum işlem tutarı</p>
+              </div>
             </div>
           </div>
         );
@@ -640,19 +784,26 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'execution':
         return (
           <div className="space-y-4">
-            <ModernInput
-              label="İşlem Gecikmesi (saniye)"
-              type="number"
-              placeholder="0"
-              min={0}
-              max={300}
-              {...methods.register('executionDelay', { valueAsNumber: true })}
-              error={errors.executionDelay?.message}
-              helperText="İşlemleri yürütmeden önceki bekleme süresi (0 anında)"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">İşlem Gecikmesi (saniye)</label>
+              <input
+                type="number"
+                placeholder="0"
+                min={0}
+                max={300}
+                {...methods.register('executionDelay', { valueAsNumber: true })}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+              />
+              <p className="text-xs text-gray-400">İşlemleri yürütmeden önceki bekleme süresi (0 anında)</p>
+            </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Max Slippage (%)</label>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Max Slippage (%)</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="range"
@@ -660,66 +811,78 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   max="10"
                   step="0.1"
                   {...methods.register('maxSlippage', { valueAsNumber: true })}
-                  className="flex-1"
+                  className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
-                <span className="w-12 text-center font-medium">
+                <span className="w-12 text-center font-medium text-gray-300">
                   {watchedValues.maxSlippage}%
                 </span>
               </div>
             </div>
 
-            <ModernInput
-              label="Yeniden Deneme Sayısı"
-              type="number"
-              placeholder="3"
-              min={0}
-              max={5}
-              {...methods.register('retryAttempts', { valueAsNumber: true })}
-              error={errors.retryAttempts?.message}
-              helperText="Başarısız işlemler için yeniden deneme sayısı"
-            />
-
             <div className="space-y-2">
-              <label className="flex items-center space-x-2">
+              <label className="block text-sm font-medium text-gray-300">Yeniden Deneme Sayısı</label>
+              <input
+                type="number"
+                placeholder="3"
+                min={0}
+                max={5}
+                {...methods.register('retryAttempts', { valueAsNumber: true })}
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                  color: '#f3f4f6',
+                  border: '2px solid rgba(156, 163, 175, 0.3)'
+                }}
+              />
+              <p className="text-xs text-gray-400">Başarısız işlemler için yeniden deneme sayısı</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                 <input
                   type="checkbox"
                   {...methods.register('enablePartialFills')}
+                  className="w-5 h-5 rounded accent-emerald-500"
                 />
-                <span className="text-sm">Enable partial fills</span>
+                <span className="text-sm text-gray-300">Enable partial fills</span>
               </label>
 
-              <label className="flex items-center space-x-2">
+              <label className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                 <input
                   type="checkbox"
                   {...methods.register('autoAdjustPosition')}
+                  className="w-5 h-5 rounded accent-emerald-500"
                 />
-                <span className="text-sm">Auto-adjust position size</span>
+                <span className="text-sm text-gray-300">Auto-adjust position size</span>
               </label>
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
+            <div className="space-y-3">
+              <label className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                 <input
                   type="checkbox"
                   {...methods.register('enableTradeNotifications')}
+                  className="w-5 h-5 rounded accent-emerald-500"
                 />
-                <span className="text-sm">Trade notifications</span>
+                <span className="text-sm text-gray-300">Trade notifications</span>
               </label>
 
-              <label className="flex items-center space-x-2">
+              <label className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                 <input
                   type="checkbox"
                   {...methods.register('enableErrorNotifications')}
+                  className="w-5 h-5 rounded accent-emerald-500"
                 />
-                <span className="text-sm">Error notifications</span>
+                <span className="text-sm text-gray-300">Error notifications</span>
               </label>
 
-              <label className="flex items-center space-x-2">
+              <label className="flex items-center space-x-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700/30 transition-colors" style={{ backgroundColor: 'rgba(71, 85, 105, 0.2)' }}>
                 <input
                   type="checkbox"
                   {...methods.register('enableDailyReports')}
+                  className="w-5 h-5 rounded accent-emerald-500"
                 />
-                <span className="text-sm">Daily reports</span>
+                <span className="text-sm text-gray-300">Daily reports</span>
               </label>
             </div>
           </div>
@@ -729,14 +892,14 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-bold text-primary mb-2">Strateji Özeti</h3>
+              <h3 className="text-xl font-bold text-gray-200 mb-2">Strateji Özeti</h3>
               <p className="text-gray-400">Lütfen strateji ayarlarınızı kontrol edin</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gray-800/80 border-gray-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:border-gray-600">
+              <Card className="backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: 'rgba(71, 85, 105, 0.5)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <Info className="w-4 h-4" />
                     Temel Bilgiler
                   </CardTitle>
@@ -744,20 +907,20 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Adı:</span>
-                    <span className="font-medium">{watchedValues.name}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Cüzdan:</span>
-                    <span className="font-mono text-xs">
+                    <span className="font-mono text-xs text-gray-200">
                       {watchedValues.walletAddress?.slice(0, 6)}...{watchedValues.walletAddress?.slice(-4)}
                     </span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: 'rgba(71, 85, 105, 0.5)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <ExternalLink className="w-4 h-4" />
                     Borsa Ayarları
                   </CardTitle>
@@ -765,18 +928,18 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Platform:</span>
-                    <span className="font-medium">{watchedValues.exchange}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.exchange}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Mod:</span>
-                    <span className="font-medium">{watchedValues.copyMode}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.copyMode}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: 'rgba(71, 85, 105, 0.5)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     Futures Ayarları
                   </CardTitle>
@@ -784,18 +947,18 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Kaldıraç:</span>
-                    <span className="font-medium">{watchedValues.leverage}x</span>
+                    <span className="font-medium text-gray-200">{watchedValues.leverage}x</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Marj:</span>
-                    <span className="font-medium">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: 'rgba(71, 85, 105, 0.5)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <Shield className="w-4 h-4" />
                     Risk Yönetimi
                   </CardTitle>
@@ -803,21 +966,21 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Stop Loss:</span>
-                    <span className="font-medium">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Günlük Limit:</span>
-                    <span className="font-medium">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="bg-gray-800/80 border border-gray-700 rounded-lg p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:border-gray-600">
+            <div className="rounded-lg p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: 'rgba(71, 85, 105, 0.5)', borderColor: 'rgba(156, 163, 175, 0.3)', border: '1px solid rgba(156, 163, 175, 0.3)' }}>
               <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-primary">Strateji Hazır!</h4>
+                  <h4 className="font-medium text-gray-200">Strateji Hazır!</h4>
                   <p className="text-sm text-gray-400 mt-1">
                     Strateji oluşturulduktan sonra belirtilen cüzdan adresini izlemeye başlayacaktır.
                     Tüm ayarları dikkatlice kontrol edin.
@@ -837,7 +1000,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-gray-900 border-gray-700 shadow-2xl">
+      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl" style={{ backgroundColor: 'rgba(30, 41, 59, 0.95)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
         <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -845,17 +1008,19 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <TrendingUp className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold text-primary">Strateji Oluştur</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-100">Strateji Oluştur</CardTitle>
                 <p className="text-sm text-gray-400">Yeni kopya ticaret stratejisi oluşturun</p>
               </div>
             </div>
-            <ModernButton
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onClose}
-              leftIcon={<X className="w-4 h-4" />}
-              className="text-gray-400 hover:text-primary"
-            />
+              className="p-2 rounded-lg transition-all hover:bg-gray-700/50"
+              style={{
+                color: '#9ca3af'
+              }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
           <StepProgressIndicator steps={stepProgressData} />
@@ -866,64 +1031,83 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
 
-              <div className="flex items-center justify-between pt-6 border-t border-gray-700 bg-gray-800/50 -mx-6 px-6 -mb-6 pb-6">
+              <div className="flex items-center justify-between pt-6 border-t border-gray-600 -mx-6 px-6 -mb-6 pb-6" style={{ backgroundColor: 'rgba(51, 65, 85, 0.3)' }}>
                 <div className="flex items-center gap-3">
                   {currentStep > 0 && (
-                    <ModernButton
+                    <button
                       type="button"
-                      variant="outlined"
-                      size="md"
                       onClick={prevStep}
-                      leftIcon={<ChevronLeft className="w-4 h-4" />}
+                      className="px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all hover:scale-105"
+                      style={{
+                        backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                        color: '#f3f4f6',
+                        border: '2px solid rgba(156, 163, 175, 0.3)'
+                      }}
                     >
+                      <ChevronLeft className="w-4 h-4" />
                       Geri
-                    </ModernButton>
+                    </button>
                   )}
                   
                   {currentStep === 0 && (
-                    <ModernButton
+                    <button
                       type="button"
-                      variant="outlined"
-                      size="md"
                       onClick={loadDraft}
+                      className="px-4 py-2.5 rounded-lg font-medium transition-all hover:scale-105"
+                      style={{
+                        backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                        color: '#f3f4f6',
+                        border: '2px solid rgba(156, 163, 175, 0.3)'
+                      }}
                     >
                       Taslağı Yükle
-                    </ModernButton>
+                    </button>
                   )}
                   
-                  <ModernButton
+                  <button
                     type="button"
-                    variant="outlined"
-                    size="md"
                     onClick={saveDraft}
-                    leftIcon={<Save className="w-4 h-4" />}
+                    className="px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all hover:scale-105"
+                    style={{
+                      backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                      color: '#f3f4f6',
+                      border: '2px solid rgba(156, 163, 175, 0.3)'
+                    }}
                   >
+                    <Save className="w-4 h-4" />
                     Taslağı Kaydet
                     {draftSaved && <span className="ml-1 text-emerald-400">✓</span>}
-                  </ModernButton>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-3">
                   {currentStep < steps.length - 1 ? (
-                    <ModernButton
+                    <button
                       type="button"
-                      variant="primary"
-                      size="md"
                       onClick={nextStep}
-                      rightIcon={<ChevronRight className="w-4 h-4" />}
+                      className="px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all hover:scale-105 shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
+                        color: '#ffffff',
+                        border: 'none'
+                      }}
                     >
                       İleri
-                    </ModernButton>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   ) : (
-                    <ModernButton
+                    <button
                       type="submit"
-                      variant="primary"
-                      size="md"
-                      loading={isSubmitting}
-                      disabled={!isValid}
+                      disabled={!isValid || isSubmitting}
+                      className="px-6 py-2.5 rounded-lg font-medium transition-all hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: !isValid || isSubmitting ? 'rgba(71, 85, 105, 0.5)' : 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
+                        color: '#ffffff',
+                        border: 'none'
+                      }}
                     >
                       {isSubmitting ? 'Oluşturuluyor...' : 'Strateji Oluştur'}
-                    </ModernButton>
+                    </button>
                   )}
                 </div>
               </div>
