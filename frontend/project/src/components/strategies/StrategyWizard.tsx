@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import StepProgressIndicator from './StepProgressIndicator';
+import { useAuthStore } from '@/stores/authStore';
 import '@/styles/strategy-wizard.css';
 
 // Strategy validation schema
@@ -82,6 +83,13 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [formData, setFormData] = useState<Partial<StrategyFormData>>({});
+  
+  // OKX Credentials states
+  const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);
+  const [credentialsInfo, setCredentialsInfo] = useState<any>(null);
+  const [credentialsError, setCredentialsError] = useState<string | null>(null);
+  
+  const { fetchOKXCredentials } = useAuthStore();
 
   // Step progress data
   const stepProgressData = wizardSteps.map((step, index) => ({
@@ -91,6 +99,34 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
     completed: index < currentStep,
     active: index === currentStep,
   }));
+
+  // OKX Credentials handlers
+  const handleAutoFillOKXCredentials = async () => {
+    setIsLoadingCredentials(true);
+    setCredentialsError(null);
+    
+    try {
+      const result = await fetchOKXCredentials();
+      if (result.success) {
+        setCredentialsInfo(result.credentials);
+      } else {
+        setCredentialsError(result.error || 'Kimlik bilgileri alınamadı');
+      }
+    } catch (error) {
+      setCredentialsError('Bir hata oluştu');
+    } finally {
+      setIsLoadingCredentials(false);
+    }
+  };
+
+  const handleUseCredentials = () => {
+    if (credentialsInfo) {
+      // Update form values with credentials
+      setValue('apiKey', credentialsInfo.okxApiKey);
+      setValue('apiSecret', credentialsInfo.okxApiSecret);
+      setValue('passphrase', credentialsInfo.okxPassphrase);
+    }
+  };
 
   const methods = useForm<StrategyFormData>({
     resolver: zodResolver(strategySchema),
@@ -233,6 +269,67 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       case 'exchange':
         return (
           <div className="space-y-6">
+            {/* OKX Credentials Auto-fill */}
+            {watchedValues.exchange === 'OKX' && (
+              <div className="modern-card p-4 border border-primary/20 bg-primary/5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium text-primary">OKX Kimlik Bilgileri</h3>
+                  <button
+                    type="button"
+                    onClick={handleAutoFillOKXCredentials}
+                    className="modern-button sm primary"
+                    disabled={isLoadingCredentials}
+                  >
+                    {isLoadingCredentials ? 'Yükleniyor...' : 'Kimlik Bilgilerini Getir'}
+                  </button>
+                </div>
+                
+                {credentialsError && (
+                  <div className="modern-alert error mb-3">
+                    <p>{credentialsError}</p>
+                  </div>
+                )}
+
+                {credentialsInfo && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-secondary">API Key:</span>
+                      <span className="text-sm font-mono text-primary">
+                        {credentialsInfo.okxApiKey ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-secondary">API Secret:</span>
+                      <span className="text-sm font-mono text-primary">
+                        {credentialsInfo.okxApiSecret ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-secondary">Passphrase:</span>
+                      <span className="text-sm font-mono text-primary">
+                        {credentialsInfo.okxPassphrase ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                      </span>
+                    </div>
+                    
+                    {credentialsInfo.okxApiKey && credentialsInfo.okxApiSecret && credentialsInfo.okxPassphrase && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={handleUseCredentials}
+                          className="modern-button sm success"
+                        >
+                          Bu Bilgileri Kullan
+                        </button>
+                        <span className="text-xs text-tertiary">
+                          Kayıtlı OKX kimlik bilgileri stratejiye eklenecektir
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-3 text-primary">Borsa Seçimi</label>
               <div className="grid grid-cols-3 gap-3">
