@@ -29,6 +29,16 @@ export interface ModernInputProps {
   loading?: boolean;
   variant?: 'default' | 'filled' | 'outlined';
   size?: 'sm' | 'md' | 'lg';
+  
+  // Validation props
+  validateOnChange?: boolean;
+  validationRule?: {
+    pattern?: RegExp;
+    min?: number;
+    max?: number;
+    custom?: (value: any) => boolean | string;
+  };
+  onValidationChange?: (isValid: boolean, error?: string) => void;
 }
 
 const ModernInput: React.FC<ModernInputProps> = ({
@@ -58,15 +68,79 @@ const ModernInput: React.FC<ModernInputProps> = ({
   loading = false,
   variant = 'default',
   size = 'md',
+  validateOnChange = false,
+  validationRule,
+  onValidationChange,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
-  const hasError = !!error;
+  const hasError = !!error || !!validationError;
   const hasSuccess = !!success;
 
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Validation function
+  const validateValue = (val: any): string | null => {
+    if (!validationRule) return null;
+
+    const stringValue = String(val);
+
+    // Pattern validation
+    if (validationRule.pattern && !validationRule.pattern.test(stringValue)) {
+      return 'Format geçersiz';
+    }
+
+    // Min validation for numbers
+    if (type === 'number' && validationRule.min !== undefined) {
+      const numValue = Number(val);
+      if (numValue < validationRule.min) {
+        return `Değer en az ${validationRule.min} olmalıdır`;
+      }
+    }
+
+    // Max validation for numbers
+    if (type === 'number' && validationRule.max !== undefined) {
+      const numValue = Number(val);
+      if (numValue > validationRule.max) {
+        return `Değer en fazla ${validationRule.max} olmalıdır`;
+      }
+    }
+
+    // Min validation for string length
+    if (type !== 'number' && validationRule.min !== undefined) {
+      if (stringValue.length < validationRule.min) {
+        return `En az ${validationRule.min} karakter olmalıdır`;
+      }
+    }
+
+    // Max validation for string length
+    if (type !== 'number' && validationRule.max !== undefined) {
+      if (stringValue.length > validationRule.max) {
+        return `En fazla ${validationRule.max} karakter olmalıdır`;
+      }
+    }
+
+    // Custom validation
+    if (validationRule.custom) {
+      const customResult = validationRule.custom(val);
+      if (typeof customResult === 'string') {
+        return customResult;
+      } else if (customResult === false) {
+        return 'Geçersiz değer';
+      }
+    }
+
+    return null;
+  };
+
+  const handleValidation = (val: any) => {
+    const error = validateValue(val);
+    setValidationError(error);
+    onValidationChange?.(!error, error || undefined);
+  };
 
   const sizeClasses = {
     sm: 'px-3 py-2 text-sm',
@@ -103,7 +177,17 @@ const ModernInput: React.FC<ModernInputProps> = ({
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
+    if (validateOnChange) {
+      handleValidation(e.target.value);
+    }
     onBlur?.(e);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.(e);
+    if (validateOnChange) {
+      handleValidation(e.target.value);
+    }
   };
 
   return (
@@ -138,7 +222,7 @@ const ModernInput: React.FC<ModernInputProps> = ({
           id={inputId}
           type={inputType}
           value={value}
-          onChange={onChange}
+          onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
           disabled={disabled}
@@ -201,23 +285,23 @@ const ModernInput: React.FC<ModernInputProps> = ({
       </div>
 
       {/* Helper text and error messages */}
-      {(helperText || error || success) && (
+      {(helperText || error || validationError || success) && (
         <div className="text-xs space-y-1">
-          {error && (
+          {(error || validationError) && (
             <p className="text-error flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              {error}
+              {validationError || error}
             </p>
           )}
           
-          {success && (
+          {success && !validationError && (
             <p className="text-success flex items-center gap-1">
               <CheckCircle className="w-3 h-3" />
               {success}
             </p>
           )}
           
-          {helperText && !error && !success && (
+          {helperText && !error && !validationError && !success && (
             <p className="text-tertiary">{helperText}</p>
           )}
         </div>
