@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Bell, BellOff, Smartphone, TestTube } from 'lucide-react';
+import { Bell, BellOff, Smartphone } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { toast } from 'sonner';
 
@@ -11,7 +11,7 @@ interface NotificationSettingsProps {
 }
 
 export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ 
-  userId = 'user1' // Default test user
+  userId 
 }) => {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -43,7 +43,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     try {
       if (enabled) {
         // Subscribe to notifications
-        const success = await notificationService.subscribe(userId);
+        const success = userId ? await notificationService.subscribe(userId) : false;
         if (success) {
           setIsEnabled(true);
           setPermission('granted');
@@ -75,32 +75,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     }
   };
 
-  const handleTestNotification = async () => {
-    setIsLoading(true);
-    
-    try {
-      const success = await notificationService.sendTestNotification(
-        userId,
-        '🚀 Test bildirimi! Zenith Trader bildirimleriniz çalışıyor.'
-      );
-      
-      if (success) {
-        toast.success('Test bildirimi gönderildi!', {
-          description: 'Birkaç saniye içinde bildirim gelecek.'
-        });
-      } else {
-        throw new Error('Test notification failed');
-      }
-    } catch (error) {
-      console.error('Test notification failed:', error);
-      toast.error('Test bildirimi gönderilemedi', {
-        description: 'Bildirimlerinizin etkin olduğundan emin olun.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  
   const getStatusMessage = () => {
     if (!isSupported) {
       return {
@@ -184,27 +159,15 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         )}
 
         {isEnabled && (
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              onClick={handleTestNotification}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <TestTube className="mr-2 h-4 w-4" />
-              Test Bildirimi Gönder
-            </Button>
-            
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <div className="text-sm text-blue-800">
-                <strong>Bildirim türleri:</strong>
-                <br />
-                🟢 Pozisyon açılması
-                <br />
-                🟡 Kısmi pozisyon kapanması
-                <br />
-                🔴 Pozisyon tamamen kapanması
-              </div>
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <div className="text-sm text-blue-800">
+              <strong>Bildirim türleri:</strong>
+              <br />
+              🟢 Pozisyon açılması
+              <br />
+              🟡 Kısmi pozisyon kapanması
+              <br />
+              🔴 Pozisyon tamamen kapanması
             </div>
           </div>
         )}

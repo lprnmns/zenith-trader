@@ -9,12 +9,14 @@ import { useStrategiesStore } from '@/stores/strategiesStore';
 import { getStrategyTrades } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateStrategyDialog } from '@/components/CreateStrategyDialog';
+import StrategyWizard from '@/components/strategies/StrategyWizard';
 import { formatCurrency, safeNumber } from '@/lib/utils';
 import { Plus, Edit, Trash2, Power, PowerOff, ExternalLink } from 'lucide-react';
 
 export function StrategiesPage() {
   const { strategies, updateStrategy, deleteStrategy, recentTrades, fetchStrategies, isLoading } = useStrategiesStore();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const openStrategyId = searchParams.get('open');
 
@@ -71,13 +73,23 @@ export function StrategiesPage() {
           <h1 className="text-3xl font-bold text-white mb-2">My Strategies</h1>
           <p className="text-slate-400">Manage your copy trading strategies</p>
         </div>
-        <Button 
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Strategy
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            variant="outline"
+            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Quick Create
+          </Button>
+          <Button 
+            onClick={() => setIsWizardOpen(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Advanced Wizard
+          </Button>
+        </div>
       </div>
 
       {strategies.length === 0 ? (
@@ -91,12 +103,21 @@ export function StrategiesPage() {
               <p className="text-slate-400 mb-6">
                 Create your first copy trading strategy to get started
               </p>
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              >
-                Create Your First Strategy
-              </Button>
+              <div className="flex gap-2 justify-center">
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  >
+                    Quick Create
+                  </Button>
+                  <Button 
+                    onClick={() => setIsWizardOpen(true)}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    Advanced Wizard
+                  </Button>
+                </div>
             </div>
           </CardContent>
         </Card>
@@ -293,6 +314,15 @@ export function StrategiesPage() {
       <CreateStrategyDialog 
         open={isCreateDialogOpen} 
         onOpenChange={setIsCreateDialogOpen} 
+      />
+      
+      <StrategyWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onSuccess={(strategy) => {
+          fetchStrategies();
+          setIsWizardOpen(false);
+        }}
       />
     </div>
   );

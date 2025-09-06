@@ -2,24 +2,13 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const CopyTradingEngine = require('../core/copyTradingEngine');
 const crypto = require('crypto');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Global copy trading engine instance
 let copyTradingEngine = null;
-
-// Admin middleware - sadece admin kullanıcılar erişebilir
-const adminMiddleware = async (req, res, next) => {
-  try {
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin yetkisi gerekli' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ error: 'Yetki kontrolü hatası' });
-  }
-};
 
 // API key şifreleme fonksiyonu
 function encryptApiKey(text) {
@@ -51,7 +40,7 @@ function decryptApiKey(encryptedText) {
 }
 
 // Tüm admin endpoint'leri için middleware uygula
-router.use(adminMiddleware);
+router.use(requireAuth, requireAdmin);
 
 // OKX ayarlarını kaydet
 router.post('/copy-trading/config', async (req, res) => {

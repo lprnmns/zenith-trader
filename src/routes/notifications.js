@@ -80,43 +80,6 @@ router.get('/subscription-status', async (req, res) => {
   }
 });
 
-// Test bildirimi gönder
-router.post('/test', async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Giriş yapılması gerekli' });
-    }
-
-    const hasSubscription = await notificationService.hasSubscription(req.user.id);
-    
-    if (!hasSubscription) {
-      return res.status(400).json({ error: 'Bildirim aboneliği bulunamadı' });
-    }
-
-    const testNotification = {
-      title: '🧪 Test Bildirimi',
-      body: 'Bu bir test bildirimidir. Bildirim sistemi çalışıyor!',
-      data: {
-        type: 'test',
-        timestamp: new Date().toISOString()
-      },
-      requireInteraction: false
-    };
-
-    const success = await notificationService.sendNotification(req.user.id, testNotification);
-
-    if (success) {
-      res.json({ success: true, message: 'Test bildirimi gönderildi' });
-    } else {
-      res.status(500).json({ error: 'Test bildirimi gönderilemedi' });
-    }
-
-  } catch (error) {
-    console.error('Test bildirimi hatası:', error);
-    res.status(500).json({ error: 'Test bildirimi gönderilemedi' });
-  }
-});
-
 // Kullanıcının bildirim ayarlarını al
 router.get('/settings', async (req, res) => {
   try {

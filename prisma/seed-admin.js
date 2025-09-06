@@ -1,4 +1,6 @@
 // prisma/seed-admin.js
+// NOT: Bu dosya sadece geliştirme ortamı için kullanılır.
+// Üretim ortamında admin kullanıcıları Google OAuth ile oluşturulur.
 const { PrismaClient } = require('@prisma/client');
 const authService = require('../src/services/authService');
 
@@ -22,7 +24,7 @@ async function main() {
     const result = await authService.register(
       'admin@gmail.com',
       'Kgkput_4896',
-      'admin'
+      'ADMIN'
     );
 
     if (result.success) {

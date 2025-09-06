@@ -182,12 +182,12 @@ async function getUserById(userId) {
 }
 
 /**
- * Check if user is admin
+ * Check if user is ADMIN
  * @param {string} email - User email
- * @returns {boolean} Whether user is admin
+ * @returns {boolean} Whether user is ADMIN
  */
 function isAdmin(email) {
-  return email === 'admin@gmail.com';
+  return email === 'manasalperen@gmail.com';
 }
 
 /**
@@ -220,13 +220,13 @@ function authenticateToken(req, res, next) {
 }
 
 /**
- * Middleware to check admin role
+ * Middleware to check ADMIN role
  * @param {Object} req - Express request
  * @param {Object} res - Express response
  * @param {Function} next - Next middleware
  */
 function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
+  if (!req.user || req.user.role !== 'ADMIN') {
     return res.status(403).json({ 
       success: false, 
       error: 'Admin access required' 
@@ -236,7 +236,7 @@ function requireAdmin(req, res, next) {
 }
 
 /**
- * Middleware to check user or admin role
+ * Middleware to check user or ADMIN role
  * @param {Object} req - Express request
  * @param {Object} res - Express response
  * @param {Function} next - Next middleware

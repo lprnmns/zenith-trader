@@ -28,21 +28,18 @@ export function LoginPage() {
     // Mock login - replace with actual API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    login(
-      { id: '1', email: data.email, name: data.email.split('@')[0] },
-      'mock-jwt-token'
-    );
+    // For demo purposes, simulate a successful login
+    // In production, this would call the actual API
+    const result = await login(data.email, data.password);
     
-    navigate('/dashboard');
+    if (result.success) {
+      navigate('/dashboard');
+    }
   };
 
   const handleGoogleLogin = () => {
-    // Mock Google login
-    login(
-      { id: '1', email: 'trader@example.com', name: 'Crypto Trader' },
-      'mock-jwt-token'
-    );
-    navigate('/dashboard');
+    // Redirect to Google OAuth
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/auth/google`;
   };
 
   return (

@@ -30,6 +30,7 @@ model User {
   notifications    UserNotification[]
   walletNotifications UserWalletNotification[]
   subscription       UserSubscription?
+  pushSubscriptions PushSubscription[]
 
   @@index([googleId])
   @@index([googleEmail])
@@ -96,20 +97,42 @@ model Strategy {
 
   name           String
   walletAddress  String    @unique
-  okxApiKey      String
-  okxApiSecret   String
-  okxPassphrase  String
-
-  positionSize   Float
+  
+  // Exchange Configuration
+  exchange       String    @default("OKX") // 'OKX' | 'Binance' | 'Bybit'
+  copyMode       String    @default("Perpetual") // 'Perpetual' | 'Spot'
+  
+  // OKX Specific Fields (nullable for other exchanges)
+  okxApiKey      String?
+  okxApiSecret   String?
+  okxPassphrase  String?
+  
+  // Strategy Settings
+  positionSize   Float     @default(100)
   leverage       Int       @default(5)
-  allowedTokens  String[]
-
+  allowedTokens  String[]  @default([])
+  
+  // Performance Tracking
+  currentPnL     Float     @default(0)
+  totalPnL       Float     @default(0)
+  tradesCount    Int       @default(0)
+  
+  // Strategy Configuration
+  sizingMethod   String    @default("Fixed Amount") // 'Fixed Amount' | 'Percentage of Wallet\'s Trade'
+  amountPerTrade Float?
+  percentageToCopy Float?
+  stopLoss       Float?
+  dailyLimit     Int?
+  
   isActive       Boolean   @default(true)
   lastChecked    DateTime  @default(now())
 
   userId         Int
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   trades         Trade[]
+  executions     StrategyExecution[]
+  walletEvents   WalletEvent[]
+  tradingSignals TradingSignal[]
 
   @@index([userId])
 }
@@ -203,4 +226,148 @@ model UserSubscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_subscriptions")
+}
+
+// ============================ STRATEGY EXECUTION ============================
+
+model StrategyExecution {
+  id              Int      @id @default(autoincrement())
+  strategyId      Int
+  executionType   String   // 'SIGNAL_RECEIVED' | 'TRADE_EXECUTED' | 'ERROR_OCCURRED' | 'POSITION_CLOSED'
+  status          String   // 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED'
+  
+  // Signal Information
+  signalType      String?  // 'BUY' | 'SELL'
+  token           String?
+  amount          Decimal? @db.Decimal(20, 8)
+  price           Decimal? @db.Decimal(20, 8)
+  
+  // Execution Details
+  exchangeOrderId String?
+  executedPrice   Decimal? @db.Decimal(20, 8)
+  executedAmount  Decimal? @db.Decimal(20, 8)
+  fee             Decimal? @db.Decimal(20, 8)
+  
+  // Error Handling
+  errorCode       String?
+  errorMessage    String?
+  
+  // Performance Metrics
+  pnl             Decimal? @db.Decimal(20, 8)
+  executionTime   Int?     // Execution time in milliseconds
+  
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  strategy        Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId, timestamp(sort: Desc)])
+  @@index([executionType, status])
+  @@index([token, timestamp])
+  @@map("strategy_executions")
+}
+
+// ============================ AUDIT LOG ============================
+
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  
+  // Entity Information
+  entityType      String   // 'Strategy' | 'User' | 'Trade' | 'Configuration'
+  entityId        Int
+  
+  // Action Information
+  action          String   // 'CREATE' | 'UPDATE' | 'DELETE' | 'EXECUTE' | 'LOGIN' | 'LOGOUT'
+  
+  // User Context
+  userId          Int?
+  userRole        String?
+  
+  // Change Details
+  oldValues       Json?
+  newValues       Json?
+  
+  // Metadata
+  ipAddress       String?
+  userAgent       String?
+  sessionId       String?
+  
+  // Status
+  status          String   // 'SUCCESS' | 'FAILED' | 'WARNING'
+  
+  // Additional Context
+  description     String?
+  metadata        Json?
+  
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([entityType, entityId, timestamp(sort: Desc)])
+  @@index([userId, action, timestamp])
+  @@index([status, timestamp])
+  @@map("audit_logs")
+}
+
+model WalletEvent {
+  id          Int      @id @default(autoincrement())
+  walletAddress String
+  eventType   String   // 'TRANSACTION' | 'POSITION_CHANGE' | 'UNKNOWN'
+  eventData   Json     // Raw event data from Zerion
+  timestamp   DateTime @default(now())
+  processed   Boolean  @default(false)
+  error       String?
+  strategyId  Int
+  createdAt   DateTime @default(now())
+
+  strategy       Strategy       @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  tradingSignals TradingSignal[]
+
+  @@index([walletAddress, timestamp])
+  @@index([strategyId, timestamp])
+  @@index([processed, timestamp])
+  @@map("wallet_events")
+}
+
+model TradingSignal {
+  id          Int      @id @default(autoincrement())
+  walletEventId Int?
+  strategyId  Int
+  signalType  String   // 'BUY' | 'SELL'
+  token       String
+  amount      Float
+  price       Float
+  confidence  Float?
+  metadata    Json?
+  status      String   @default("PENDING") // 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  walletEvent WalletEvent? @relation(fields: [walletEventId], references: [id], onDelete: SetNull)
+  strategy    Strategy    @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId, status, createdAt])
+  @@index([token, signalType, createdAt])
+  @@index([walletEventId])
+  @@map("trading_signals")
+}
+
+model PushSubscription {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  endpoint    String   @unique
+  p256dh      String
+  auth        String
+  keys        Json
+  userAgent   String?
+  isActive    Boolean  @default(true)
+  lastUsed    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("push_subscriptions")
 }

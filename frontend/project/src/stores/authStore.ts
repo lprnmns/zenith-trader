@@ -1,11 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 interface User {
   id: number;
   email: string;
   role: string;
   createdAt: string;
+  googleId?: string;
+  googleEmail?: string;
+  name?: string;
+  picture?: string;
 }
 
 interface AuthState {
@@ -15,15 +18,15 @@ interface AuthState {
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  googleLogin: (token: string, user: User) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
 }
 
 const API_BASE = 'http://localhost:3001/api';
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
+export const useAuthStore = create<AuthState>(
+  (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -42,7 +45,7 @@ export const useAuthStore = create<AuthState>()(
           const data = await response.json();
 
           if (data.success) {
-            const isAdmin = data.user.role === 'admin';
+            const isAdmin = data.user.role === 'ADMIN';
             set({ 
               user: data.user, 
               token: data.token,
@@ -72,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
           const data = await response.json();
 
           if (data.success) {
-            const isAdmin = data.user.role === 'admin';
+            const isAdmin = data.user.role === 'ADMIN';
             set({ 
               user: data.user, 
               token: data.token,
@@ -86,6 +89,22 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Register error:', error);
           return { success: false, error: 'Network error occurred' };
+        }
+      },
+
+      googleLogin: async (token: string, user: User) => {
+        try {
+          const isAdmin = user.role === 'ADMIN';
+          set({ 
+            user, 
+            token,
+            isAuthenticated: true,
+            isAdmin 
+          });
+          return { success: true };
+        } catch (error) {
+          console.error('Google login error:', error);
+          return { success: false, error: 'Failed to process Google login' };
         }
       },
 
@@ -126,7 +145,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (response.ok) {
             const data = await response.json();
-            const isAdmin = data.user.role === 'admin';
+            const isAdmin = data.user.role === 'ADMIN';
             set({ 
               user: data.user,
               isAuthenticated: true,
@@ -148,9 +167,5 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
       },
-    }),
-    {
-      name: 'auth-storage',
-    }
-  )
-);
+    })
+  );

@@ -23,9 +23,9 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const { register, login } = useAuthStore();
   
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
+  const { register: registerForm, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
@@ -33,21 +33,18 @@ export function RegisterPage() {
     // Mock registration - replace with actual API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    login(
-      { id: '1', email: data.email, name: data.name },
-      'mock-jwt-token'
-    );
+    // For demo purposes, simulate a successful registration
+    // In production, this would call the actual API
+    const result = await register(data.email, data.password);
     
-    navigate('/dashboard');
+    if (result.success) {
+      navigate('/dashboard');
+    }
   };
 
   const handleGoogleRegister = () => {
-    // Mock Google registration
-    login(
-      { id: '1', email: 'trader@example.com', name: 'Crypto Trader' },
-      'mock-jwt-token'
-    );
-    navigate('/dashboard');
+    // Redirect to Google OAuth
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/auth/google`;
   };
 
   return (
@@ -89,7 +86,7 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Input
-                {...register('name')}
+                {...registerForm('name')}
                 type="text"
                 placeholder="Full name"
                 className="h-12 bg-slate-800/50 border-slate-600 focus:border-emerald-400 text-white placeholder:text-slate-400"
@@ -101,7 +98,7 @@ export function RegisterPage() {
             
             <div>
               <Input
-                {...register('email')}
+                {...registerForm('email')}
                 type="email"
                 placeholder="Email address"
                 className="h-12 bg-slate-800/50 border-slate-600 focus:border-emerald-400 text-white placeholder:text-slate-400"
@@ -113,7 +110,7 @@ export function RegisterPage() {
             
             <div>
               <Input
-                {...register('password')}
+                {...registerForm('password')}
                 type="password"
                 placeholder="Password"
                 className="h-12 bg-slate-800/50 border-slate-600 focus:border-emerald-400 text-white placeholder:text-slate-400"
@@ -125,7 +122,7 @@ export function RegisterPage() {
             
             <div>
               <Input
-                {...register('confirmPassword')}
+                {...registerForm('confirmPassword')}
                 type="password"
                 placeholder="Confirm password"
                 className="h-12 bg-slate-800/50 border-slate-600 focus:border-emerald-400 text-white placeholder:text-slate-400"

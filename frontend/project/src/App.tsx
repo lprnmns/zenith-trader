@@ -1,68 +1,165 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AuthPage from './pages/AuthPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { LoadingState } from './components/AsyncState';
+import { useAuthStore } from './stores/authStore';
+import { Toaster } from 'sonner';
+import './App.css';
+import './utils/pwa';
+
+// Import components directly to avoid lazy loading issues
+import { AppLayout } from './components/layout/AppLayout';
+import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Import pages directly to avoid lazy loading issues
 import { DashboardPage } from './pages/DashboardPage';
 import { StrategiesPage } from './pages/StrategiesPage';
 import { ExplorerPage } from './pages/ExplorerPage';
-import { AppLayout } from './components/layout/AppLayout';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { useAuthStore } from './stores/authStore';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { OAuthSuccessPage } from './pages/OAuthSuccessPage';
+import { OAuthErrorPage } from './pages/OAuthErrorPage';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
+import TestPage from './pages/TestPage';
+
+// Import AuthPage directly
+import { AuthPage } from './pages/AuthPage';
+
+// Import notification service directly to avoid lazy loading issues
 import { notificationService } from './services/notificationService';
-import { Toaster } from 'sonner';
-import './App.css';
 
 function App() {
   const { isAuthenticated } = useAuthStore();
 
-  useEffect(() => {
-    // Initialize notification service when app loads
-    notificationService.init().then((success) => {
+  const initializeNotifications = useCallback(async () => {
+    try {
+      const success = await notificationService.init();
       if (success) {
         console.log('[App] Notification service initialized');
       } else {
         console.warn('[App] Notification service initialization failed');
       }
-    });
+    } catch (error) {
+      console.error('[App] Notification service initialization error:', error);
+    }
   }, []);
 
+  const setupPWAEventListeners = useCallback(() => {
+    const handlePWAUpdateAvailable = () => {
+      console.log('[App] PWA update available');
+    };
+    
+    const handlePWAOnline = async () => {
+      console.log('[App] PWA online');
+      notificationService.success('You are back online', {
+        description: 'All features are now available'
+      });
+    };
+    
+    const handlePWAOffline = async () => {
+      console.log('[App] PWA offline');
+      notificationService.warning('You are offline', {
+        description: 'Some features may be limited'
+      });
+    };
+    
+    const handlePWASyncComplete = async (event: CustomEvent) => {
+      console.log('[App] PWA sync complete:', event.detail);
+      notificationService.success('Sync completed', {
+        description: `${event.detail.count || 'All'} items synced successfully`
+      });
+    };
+    
+    window.addEventListener('pwa-update-available', handlePWAUpdateAvailable);
+    window.addEventListener('pwa-online', handlePWAOnline);
+    window.addEventListener('pwa-offline', handlePWAOffline);
+    window.addEventListener('pwa-sync-complete', handlePWASyncComplete as EventListener);
+    
+    return () => {
+      window.removeEventListener('pwa-update-available', handlePWAUpdateAvailable);
+      window.removeEventListener('pwa-online', handlePWAOnline);
+      window.removeEventListener('pwa-offline', handlePWAOffline);
+      window.removeEventListener('pwa-sync-complete', handlePWASyncComplete as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    initializeNotifications();
+    const cleanupPWA = setupPWAEventListeners();
+    return cleanupPWA;
+  }, [initializeNotifications, setupPWAEventListeners]);
+
   return (
-    <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={!isAuthenticated ? <AuthPage initial="login" /> : <Navigate to="/dashboard" replace />}
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+            <Route
+              path="/login"
+              element={!isAuthenticated ? <AuthPage initial="login" /> : <Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="/register"
+              element={!isAuthenticated ? <AuthPage initial="register" /> : <Navigate to="/dashboard" replace />}
+            />
+            <Route path="/auth/success" element={<OAuthSuccessPage />} />
+            <Route path="/auth/error" element={<OAuthErrorPage />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route 
+                path="dashboard" 
+                element={
+                  <ErrorBoundary>
+                    <ProtectedRoute requiredRole="ADMIN">
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  </ErrorBoundary>
+                } 
+              />
+              <Route 
+                path="strategies" 
+                element={
+                  <ErrorBoundary>
+                    <ProtectedRoute requiredRole="ADMIN">
+                      <StrategiesPage />
+                    </ProtectedRoute>
+                  </ErrorBoundary>
+                } 
+              />
+              <Route 
+                path="explorer" 
+                element={
+                  <ErrorBoundary>
+                    <ProtectedRoute requiredRole="USER">
+                      <ExplorerPage />
+                    </ProtectedRoute>
+                  </ErrorBoundary>
+                } 
+              />
+            </Route>
+          </Routes>
+          
+          {/* PWA Install Prompt */}
+          <PWAInstallPrompt />
+          
+          {/* PWA Update Prompt */}
+          <PWAUpdatePrompt />
+        
+        {/* Toast notifications */}
+        <Toaster 
+          position="top-right" 
+          richColors 
+          closeButton 
+          duration={4000}
         />
-        <Route
-          path="/register"
-          element={!isAuthenticated ? <AuthPage initial="register" /> : <Navigate to="/dashboard" replace />}
-        />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="strategies" element={<StrategiesPage />} />
-          <Route path="explorer" element={<ExplorerPage />} />
-        </Route>
-      </Routes>
-      
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
-      
-      {/* Toast notifications */}
-      <Toaster 
-        position="top-right" 
-        richColors 
-        closeButton 
-        duration={4000}
-      />
-    </Router>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

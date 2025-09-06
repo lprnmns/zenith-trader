@@ -94,55 +94,6 @@ router.post('/unsubscribe', (req, res) => {
 });
 
 /**
- * POST /api/notifications/test
- * Send test notification
- */
-router.post('/test', async (req, res) => {
-  try {
-    const { userId, message } = req.body;
-    
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing userId' 
-      });
-    }
-
-    const payload = {
-      title: 'Zenith Trader Test',
-      body: message || 'Bu bir test bildirimidir!',
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
-      data: {
-        test: true,
-        timestamp: Date.now(),
-        url: '/dashboard'
-      }
-    };
-
-    const sent = await notificationService.sendNotificationToUser(userId, payload);
-    
-    if (sent) {
-      res.json({ 
-        success: true, 
-        message: 'Test notification sent successfully' 
-      });
-    } else {
-      res.status(404).json({ 
-        success: false, 
-        error: 'User not subscribed or notification failed' 
-      });
-    }
-  } catch (error) {
-    console.error('[API] Test notification error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to send test notification' 
-    });
-  }
-});
-
-/**
  * POST /api/notifications/broadcast
  * Send broadcast notification to all users
  */

@@ -27,9 +27,9 @@ class NotificationService {
         return false;
       }
 
-      // Register service worker
-      this.swRegistration = await navigator.serviceWorker.register('/sw.js');
-      console.log('[Notifications] Service Worker registered');
+      // Service Worker registration temporarily disabled
+      console.log('[Notifications] Service Worker registration temporarily disabled');
+      this.swRegistration = null;
 
       // Get VAPID public key from backend
       await this.getVapidPublicKey();

@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { getStrategies as apiGetStrategies, createStrategy as apiCreateStrategy, deleteStrategy as apiDeleteStrategy, updateStrategy as apiUpdateStrategy } from '@/lib/api';
 
 export interface Strategy {
@@ -51,9 +50,8 @@ interface StrategiesState {
   setError: (error: string | null) => void;
 }
 
-export const useStrategiesStore = create<StrategiesState>()(
-  persist(
-    (set, get) => ({
+export const useStrategiesStore = create<StrategiesState>(
+  (set, get) => ({
   strategies: [],
   recentTrades: [],
   isLoading: false,
@@ -103,13 +101,5 @@ export const useStrategiesStore = create<StrategiesState>()(
         ...state.recentTrades,
       ].slice(0, 10),
     })),
-    }),
-    {
-      name: 'strategies-storage',
-      partialize: (state) => ({ 
-        strategies: state.strategies,
-        recentTrades: state.recentTrades 
-      }),
-    }
-  )
-);
+    })
+  );

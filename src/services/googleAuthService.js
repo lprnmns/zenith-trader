@@ -98,12 +98,13 @@ class GoogleAuthService {
         }
       } else {
         // Create new user
+        const isAdmin = googleEmail === 'manasalperen@gmail.com';
         user = await prisma.user.create({
           data: {
             email: googleEmail,
             googleId,
             googleEmail,
-            role: 'USER', // Default role for new OAuth users
+            role: isAdmin ? 'ADMIN' : 'USER', // Set ADMIN role for specific email
             isActive: true,
             lastLoginAt: new Date()
           }
@@ -118,6 +119,7 @@ class GoogleAuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          createdAt: user.createdAt,
           googleId: user.googleId,
           googleEmail: user.googleEmail,
           name,

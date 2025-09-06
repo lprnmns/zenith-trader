@@ -10,12 +10,12 @@ async function main() {
     where: { email: 'admin@zenithtrader.com' },
     update: { 
       password: adminPassword,
-      role: 'admin' 
+      role: 'ADMIN' 
     },
     create: {
       email: 'admin@zenithtrader.com',
       password: adminPassword,
-      role: 'admin'
+      role: 'ADMIN'
     },
   });
   console.log('Admin user created/updated:', adminUser.email);
@@ -26,12 +26,12 @@ async function main() {
     where: { email: 'demo@zenithtrader.com' },
     update: { 
       password: demoPassword,
-      role: 'user' 
+      role: 'USER' 
     },
     create: {
       email: 'demo@zenithtrader.com',
       password: demoPassword,
-      role: 'user'
+      role: 'USER'
     },
   });
   console.log('Demo user created/updated:', demoUser.email);

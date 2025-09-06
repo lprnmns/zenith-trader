@@ -17,7 +17,7 @@ export const SettingsPage: React.FC = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Notification Settings */}
         <div className="md:col-span-2">
-          <NotificationSettings userId="user1" />
+          <NotificationSettings />
         </div>
 
         {/* PWA Info */}

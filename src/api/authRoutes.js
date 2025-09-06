@@ -26,8 +26,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if email is admin
-    const role = authService.isAdmin(email) ? 'admin' : 'user';
+    // Check if email is ADMIN
+    const role = authService.isAdmin(email) ? 'ADMIN' : 'USER';
 
     const result = await authService.register(email, password, role);
 
@@ -137,13 +137,38 @@ router.post('/logout', authService.authenticateToken, (req, res) => {
 });
 
 /**
- * GET /api/auth/check-admin
- * Check if current user is admin
+ * GET /api/auth/config
+ * Get OAuth configuration
  */
-router.get('/check-admin', authService.authenticateToken, (req, res) => {
+router.get('/config', (req, res) => {
+  try {
+    const config = {
+      enabled: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+      config: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        redirectUri: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/success`,
+        scopes: ['email', 'profile']
+      }
+    };
+
+    res.json(config);
+  } catch (error) {
+    console.error('[Auth API] Config error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get OAuth configuration'
+    });
+  }
+});
+
+/**
+ * GET /api/auth/check-ADMIN
+ * Check if current user is ADMIN
+ */
+router.get('/check-ADMIN', authService.authenticateToken, (req, res) => {
   res.json({
     success: true,
-    isAdmin: req.user.role === 'admin',
+    isAdmin: req.user.role === 'ADMIN',
     user: {
       id: req.user.userId,
       email: req.user.email,

@@ -6,8 +6,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
-import { Chrome, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { GoogleLoginButton } from './GoogleLoginButton';
 
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e‑posta girin'),
@@ -48,14 +49,7 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
-      <Button
-        disabled
-        variant="outline"
-        className="w-full h-11 border-slate-600 bg-slate-800/30 text-slate-500 cursor-not-allowed opacity-50"
-      >
-        <Chrome className="w-5 h-5 mr-2" />
-        Google Sign-in (Yakında)
-      </Button>
+      <GoogleLoginButton />
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -103,15 +97,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      {/* Admin hint */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <div className="flex items-center space-x-2">
-          <Lock className="h-4 w-4 text-blue-600" />
-          <p className="text-blue-800 text-sm">
-            <strong>Admin:</strong> admin@gmail.com (Copy trading erişimi)
-          </p>
-        </div>
-      </div>
+      {/* Admin hint removed - use environment variables or admin seeding script */}
 
   <p className="text-center text-slate-400 text-base">
         Don’t have an account?{' '}
