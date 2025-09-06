@@ -103,6 +103,52 @@ router.get('/explorer/:address/analysis', async (req, res) => {
   }
 });
 
+// POST /api/wallet/analyze - Wallet analysis for frontend
+router.post('/wallet/analyze', async (req, res) => {
+  try {
+    const { address } = req.body;
+    if (!address) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+    
+    console.log('[Wallet] Analyzing wallet:', address);
+    const result = await analyzeWallet(address);
+    
+    // Transform the result to match frontend expectations
+    const transformed = {
+      address: address,
+      totalValue: result.tradeHistory.reduce((sum, trade) => sum + trade.amountUsd, 0) || 0,
+      positions: result.tradeHistory
+        .filter(trade => trade.unrealizedPnlUsd !== null)
+        .map(trade => ({
+          token: trade.asset,
+          amount: trade.amountUsd / (trade.costPerUnit || 1),
+          value: trade.amountUsd,
+          price: trade.costPerUnit || 0,
+          pnl: trade.unrealizedPnlUsd || 0,
+          pnlPercentage: trade.unrealizedPnlPercent || 0
+        })),
+      pnl1d: Math.random() * 10 - 5, // Mock daily PnL
+      pnl7d: Math.random() * 20 - 10, // Mock weekly PnL
+      pnl30d: Math.random() * 40 - 20, // Mock monthly PnL
+      tradingPerformance: {
+        totalPnl: result.cumulativePnlChart[result.cumulativePnlChart.length - 1]?.cumulativePnl || 0,
+        winRate: result.summary.winRatePercent,
+        totalTrades: result.summary.totalTrades,
+        avgTradeSize: result.summary.avgTradeSizeUsd,
+        realizedTrades: result.tradeHistory.filter(t => t.sales.length > 0).length
+      },
+      cumulativePnlChart: result.cumulativePnlChart || [],
+      lastUpdated: new Date().toISOString()
+    };
+    
+    res.json(transformed);
+  } catch (e) {
+    console.error('[Wallet] Analysis error:', e.message);
+    res.status(500).json({ error: 'Wallet analysis failed' });
+  }
+});
+
 // Health
 router.get('/health', (req, res) => {
 	res.status(200).json({ status: 'ok', timestamp: new Date() });
@@ -128,7 +174,9 @@ router.get('/wallets/:address/performance', async (req, res) => {
 // GET /api/strategies - list user's strategies  
 router.get('/strategies', requireAuth, async (req, res) => {
 	try {
+		console.log('[API] GET /strategies - User ID:', req.user.userId);
 		const strategies = await strategyService.getUserStrategies(req.user.userId);
+		console.log('[API] Strategies fetched:', strategies?.length || 0);
 		
 		// Transform to match frontend interface
 		const transformedStrategies = strategies.map((s) => ({

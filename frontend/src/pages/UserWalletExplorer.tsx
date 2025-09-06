@@ -50,6 +50,14 @@ interface WalletAnalysis {
   historicalData: HistoricalData[];
   tokenDistribution: TokenDistribution[];
   lastUpdated: string;
+  tradingPerformance?: {
+    totalPnl: number;
+    winRate: number;
+    totalTrades: number;
+    avgTradeSize: number;
+    realizedTrades: number;
+  };
+  cumulativePnlChart?: Array<{ date: string; cumulativePnl: number }>;
 }
 
 interface Position {
@@ -117,13 +125,24 @@ export default function UserWalletExplorer() {
 
       if (response.ok) {
         const data = await response.json();
-        // Mock historical data and token distribution for demo
+        console.log('[Wallet] Analysis data:', data);
+        
+        // Use real cumulative PnL chart data if available
+        const historicalData = data.cumulativePnlChart && data.cumulativePnlChart.length > 0 
+          ? data.cumulativePnlChart.map(item => ({
+              date: item.date,
+              value: data.totalValue * (1 + item.cumulativePnl / 1000), // Mock value based on PnL
+              pnl: item.cumulativePnl
+            }))
+          : generateHistoricalData(data.totalValue);
+        
         const enhancedData = {
           ...data,
-          historicalData: generateHistoricalData(data.totalValue),
+          historicalData,
           tokenDistribution: generateTokenDistribution(data.positions),
           lastUpdated: new Date().toISOString()
         };
+        
         setWalletAnalysis(enhancedData);
         setLastRefreshed(new Date());
       } else {
@@ -413,6 +432,52 @@ export default function UserWalletExplorer() {
                     </div>
                   )}
 
+                {/* Trading Performance Metrics */}
+                {walletAnalysis?.tradingPerformance && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Trading Performansı
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className={`text-xl font-bold ${walletAnalysis.tradingPerformance.totalPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            ${walletAnalysis.tradingPerformance.totalPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Total PnL (Kümülatif)</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xl font-bold text-blue-500">
+                            {walletAnalysis.tradingPerformance.winRate.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-muted-foreground">Win Rate</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xl font-bold">
+                            {walletAnalysis.tradingPerformance.totalTrades}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Total Trades</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xl font-bold">
+                            ${walletAnalysis.tradingPerformance.avgTradeSize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Avg Trade Size</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-center">
+                        <div className="text-lg font-semibold text-amber-500">
+                          {walletAnalysis.tradingPerformance.realizedTrades} Realized (SELL) trades
+                        </div>
+                        <div className="text-sm text-muted-foreground">Over realized sales</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                   {/* Grafik Türü Seçimi */}
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm font-medium">Grafik Türü:</span>
@@ -529,7 +594,12 @@ export default function UserWalletExplorer() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
                                 <YAxis />
-                                <Tooltip />
+                                <Tooltip 
+                                  formatter={(value, name) => [
+                                    name === 'pnl' ? `${Number(value).toFixed(2)}%` : `$${Number(value).toLocaleString()}`,
+                                    name === 'pnl' ? 'PnL' : 'Değer'
+                                  ]}
+                                />
                                 <Legend />
                                 <Line 
                                   type="monotone" 
