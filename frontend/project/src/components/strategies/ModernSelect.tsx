@@ -33,28 +33,30 @@ export interface ModernSelectProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const ModernSelect = React.forwardRef<HTMLDivElement, ModernSelectProps>(({
-  label,
-  placeholder = 'Select an option',
-  value,
-  onChange,
-  onBlur,
-  onFocus,
-  disabled = false,
-  required = false,
-  error,
-  success,
-  helperText,
-  className,
-  id,
-  name,
-  options,
-  loading = false,
-  searchable = false,
-  clearable = false,
-  variant = 'default',
-  size = 'md',
-}, ref) => {
+const ModernSelect = React.forwardRef<HTMLDivElement, ModernSelectProps>((props, ref) => {
+  const {
+    label,
+    placeholder = 'Select an option',
+    value,
+    onChange,
+    onBlur,
+    onFocus,
+    disabled = false,
+    required = false,
+    error,
+    success,
+    helperText,
+    className,
+    id,
+    name,
+    options,
+    loading = false,
+    searchable = false,
+    clearable = false,
+    variant = 'default',
+    size = 'md',
+  } = props;
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -304,6 +306,8 @@ const ModernSelect = React.forwardRef<HTMLDivElement, ModernSelectProps>(({
       )}
     </div>
   );
-};
+});
+
+ModernSelect.displayName = 'ModernSelect';
 
 export default ModernSelect;
