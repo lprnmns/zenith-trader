@@ -15,12 +15,13 @@ async function analyzeWallet(address) {
   // 2) Build purchases and sales lists from any swap using USD valuations
   const purchases = [];
   const sales = [];
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  // Extended timeframe to 2 years to include 2024 trades (adjustable as needed)
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
   const isStable = (sym) => ['USDT','USDC','DAI','TUSD','USDP','FDUSD','BUSD'].includes(String(sym || '').toUpperCase());
   for (const t of detected) {
     const dt = t.date ? new Date(t.date) : null;
-    if (dt && dt < oneYearAgo) continue; // limit to last 1y
+    if (dt && dt < twoYearsAgo) continue; // limit to last 2y to include 2024 trades
 
     // Use normalized BUY/SELL from detected list when available
     if (t.action === 'BUY') {
@@ -139,7 +140,7 @@ async function analyzeWallet(address) {
     cumulativePnlChart.push({ date: s.date, cumulativePnl: Number(cumulative.toFixed(6)) });
   }
 
-  // 4) Unrealized PnL for open/partial lots using current prices
+  // 4) Unrealized PnL for open/partial lots using current prices - ALWAYS FRESH
   try {
     const symbolSet = new Set();
     const idSet = new Set();
@@ -152,7 +153,9 @@ async function analyzeWallet(address) {
       }
     }
 
-    // Single batched lookups
+    console.log(`[AnalysisService] Fetching FRESH prices at ${new Date().toISOString()} for:`, Array.from(symbolSet).join(','));
+
+    // Single batched lookups with cache busting
     let symbolToPrice = new Map();
     if (symbolSet.size > 0) {
       symbolToPrice = await zerionService.getPricesForSymbols(Array.from(symbolSet));
@@ -165,9 +168,12 @@ async function analyzeWallet(address) {
     // Fallback for missing symbols via Coingecko (only the missing ones)
     const missingSymbols = Array.from(symbolSet).filter((s) => !symbolToPrice.has(s));
     if (missingSymbols.length > 0) {
+      console.log(`[AnalysisService] Fetching ${missingSymbols.length} missing prices from Coingecko:`, missingSymbols);
       const cgMap = await zerionService.getPricesFromCoingecko(missingSymbols);
       for (const [k, v] of cgMap.entries()) symbolToPrice.set(k, v);
     }
+    
+    console.log(`[AnalysisService] Fresh prices fetched:`, Object.fromEntries(symbolToPrice));
 
     // Compute unrealized per lot
     for (const [assetRaw, list] of byAssetPurchases.entries()) {
@@ -242,11 +248,44 @@ async function analyzeWallet(address) {
     sales: p.sales,
   })).sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
-  // 6) Summary metrics from realized sales entries
+  // 6) Calculate TOTAL PnL including unrealized gains
+  // First, get total realized PnL from all sales
   const realizedEntries = [];
+  let totalRealizedPnl = 0;
   for (const p of purchases) {
-    for (const s of p.sales) realizedEntries.push(s);
+    for (const s of p.sales) {
+      realizedEntries.push(s);
+      totalRealizedPnl += Number(s.realizedPnlUsd || 0);
+    }
   }
+  
+  // Calculate total unrealized PnL from open positions
+  let totalUnrealizedPnl = 0;
+  let openPositionsCount = 0;
+  for (const p of purchases) {
+    if (p.unrealizedPnlUsd != null && isFinite(p.unrealizedPnlUsd)) {
+      totalUnrealizedPnl += p.unrealizedPnlUsd;
+      openPositionsCount++;
+    }
+  }
+  
+  // Build enhanced chart with current portfolio value
+  // Add a final point showing current total PnL (realized + unrealized)
+  const enhancedChart = [...cumulativePnlChart];
+  const today = new Date().toISOString().slice(0, 10);
+  const totalCurrentPnl = totalRealizedPnl + totalUnrealizedPnl;
+  
+  // Add current total PnL as the last point if different from last realized
+  const lastChartPoint = enhancedChart[enhancedChart.length - 1];
+  if (!lastChartPoint || lastChartPoint.date !== today || Math.abs(lastChartPoint.cumulativePnl - totalCurrentPnl) > 0.01) {
+    enhancedChart.push({
+      date: today,
+      cumulativePnl: Number(totalCurrentPnl.toFixed(6)),
+      isCurrentValue: true // Mark this as current portfolio value
+    });
+  }
+  
+  // Calculate win rate from realized trades
   const wins = realizedEntries.filter((s) => Number(s.realizedPnlUsd) > 0).length;
   const totalTrades = realizedEntries.length;
   const winRatePercent = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
@@ -256,9 +295,20 @@ async function analyzeWallet(address) {
     winRatePercent: Number(winRatePercent.toFixed(2)),
     totalTrades,
     avgTradeSizeUsd: Number(avgTradeSizeUsd.toFixed(2)),
+    totalPnl: Number(totalCurrentPnl.toFixed(2)),
+    realizedPnl: Number(totalRealizedPnl.toFixed(2)),
+    unrealizedPnl: Number(totalUnrealizedPnl.toFixed(2)),
+    openPositions: openPositionsCount
   };
+  
+  console.log(`[AnalysisService] PnL Summary:`, {
+    realized: totalRealizedPnl.toFixed(2),
+    unrealized: totalUnrealizedPnl.toFixed(2),
+    total: totalCurrentPnl.toFixed(2),
+    chartPoints: enhancedChart.length
+  });
 
-  return { summary, cumulativePnlChart, tradeHistory };
+  return { summary, cumulativePnlChart: enhancedChart, tradeHistory };
 }
 
 module.exports = { analyzeWallet };

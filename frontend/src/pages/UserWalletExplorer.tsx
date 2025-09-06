@@ -136,11 +136,22 @@ export default function UserWalletExplorer() {
             }))
           : generateHistoricalData(data.totalValue);
         
+        // Transform backend data to match frontend interface
         const enhancedData = {
           ...data,
           historicalData,
           tokenDistribution: generateTokenDistribution(data.positions),
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
+          // Map backend summary to frontend tradingPerformance interface
+          tradingPerformance: {
+            totalPnl: data.cumulativePnlChart?.length > 0 
+              ? data.cumulativePnlChart[data.cumulativePnlChart.length - 1]?.cumulativePnl || 0 
+              : (data.summary?.totalPnl || 0),
+            winRate: data.summary?.winRatePercent || 0,
+            totalTrades: data.summary?.totalTrades || 0,
+            avgTradeSize: data.summary?.avgTradeSizeUsd || 0,
+            realizedTrades: data.summary?.totalTrades || 0
+          }
         };
         
         setWalletAnalysis(enhancedData);
