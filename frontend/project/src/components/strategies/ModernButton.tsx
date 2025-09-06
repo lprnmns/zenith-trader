@@ -1,3 +1,74 @@
+import React from 'react';
+import { cn } from '@/lib/utils';
+
+interface ModernButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'outlined' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  loading?: boolean;
+  fullWidth?: boolean;
+}
+
+const ModernButton: React.FC<ModernButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  leftIcon,
+  rightIcon,
+  loading = false,
+  fullWidth = false,
+  className,
+  children,
+  disabled,
+  ...props
+}) => {
+  const sizeClasses = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-4 py-2.5 text-sm',
+    lg: 'px-6 py-3 text-base'
+  };
+
+  const variantClasses = {
+    primary: 'modern-btn-primary',
+    secondary: 'modern-btn-secondary',
+    success: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg',
+    warning: 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white hover:shadow-lg',
+    error: 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:shadow-lg',
+    outlined: 'modern-btn-outlined',
+    ghost: 'modern-btn-ghost'
+  };
+
+  return (
+    <button
+      className={cn(
+        'modern-btn',
+        sizeClasses[size],
+        variantClasses[variant],
+        fullWidth && 'w-full',
+        loading && 'cursor-wait',
+        className
+      )}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? (
+        <>
+          <span className="modern-spinner" />
+          <span>Loading...</span>
+        </>
+      ) : (
+        <>
+          {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
+          {children}
+          {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
+        </>
+      )}
+    </button>
+  );
+};
+
+export default ModernButton;
+
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -81,9 +152,9 @@ const ModernButton: React.FC<ModernButtonProps> = ({
 
   const variantClasses = {
     primary: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500 focus:ring-emerald-500',
-    secondary: 'bg-slate-600 hover:bg-slate-700 text-white border-slate-600 focus:ring-slate-500',
-    outline: 'bg-transparent border-slate-400 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-300 focus:ring-slate-500',
-    ghost: 'bg-transparent border-transparent text-slate-300 hover:bg-slate-700 hover:text-white focus:ring-slate-500',
+    secondary: 'bg-gray-600 hover:bg-gray-700 text-white border-gray-600 focus:ring-gray-500',
+    outline: 'bg-transparent border-gray-400 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-300 focus:ring-gray-500',
+    ghost: 'bg-transparent border-transparent text-gray-300 hover:bg-gray-700 hover:text-white focus:ring-gray-500',
     success: 'bg-green-500 hover:bg-green-600 text-white border-green-500 focus:ring-green-500',
     warning: 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500 focus:ring-amber-500',
     error: 'bg-red-500 hover:bg-red-600 text-white border-red-500 focus:ring-red-500',
@@ -106,7 +177,7 @@ const ModernButton: React.FC<ModernButtonProps> = ({
     'focus:outline-none',
     'focus:ring-2',
     'focus:ring-offset-2',
-    'focus:ring-offset-slate-900',
+    'focus:ring-offset-gray-900',
     'disabled:transform-none',
     'disabled:hover:scale-100',
     {

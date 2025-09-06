@@ -1,3 +1,155 @@
+import React from 'react';
+import { ChevronDown, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface Option {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+}
+
+interface ModernSelectProps {
+  label?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  options: Option[];
+  placeholder?: string;
+  error?: string;
+  helperText?: string;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+}
+
+const ModernSelect: React.FC<ModernSelectProps> = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = 'Select an option',
+  error,
+  helperText,
+  disabled = false,
+  required = false,
+  className
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [selectedOption, setSelectedOption] = React.useState<Option | undefined>(
+    options.find(opt => opt.value === value)
+  );
+  const selectRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  React.useEffect(() => {
+    setSelectedOption(options.find(opt => opt.value === value));
+  }, [value, options]);
+
+  const handleSelect = (option: Option) => {
+    if (option.disabled) return;
+    
+    setSelectedOption(option);
+    setIsOpen(false);
+    onChange?.(option.value);
+  };
+
+  return (
+    <div className="modern-select-wrapper" ref={selectRef}>
+      {label && (
+        <label className="modern-input-label">
+          {label}
+          {required && <span className="text-red-400 ml-1">*</span>}
+        </label>
+      )}
+      
+      <div className="relative">
+        <button
+          type="button"
+          className={cn(
+            'modern-select w-full text-left',
+            error && 'border-red-500',
+            disabled && 'opacity-50 cursor-not-allowed',
+            className
+          )}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+        >
+          <span className={cn(
+            'block truncate',
+            !selectedOption && 'text-neutral-500'
+          )}>
+            {selectedOption ? (
+              <span className="flex items-center gap-2">
+                {selectedOption.icon}
+                {selectedOption.label}
+              </span>
+            ) : (
+              placeholder
+            )}
+          </span>
+          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <ChevronDown
+              className={cn(
+                'h-5 w-5 text-neutral-400 transition-transform duration-200',
+                isOpen && 'transform rotate-180'
+              )}
+            />
+          </span>
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-2 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl max-h-60 overflow-auto animate-fadeIn">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cn(
+                  'w-full text-left px-4 py-3 hover:bg-neutral-700 transition-colors flex items-center gap-2',
+                  option.disabled && 'opacity-50 cursor-not-allowed',
+                  selectedOption?.value === option.value && 'bg-primary-500/10 text-primary-400'
+                )}
+                onClick={() => handleSelect(option)}
+                disabled={option.disabled}
+              >
+                {option.icon}
+                <span>{option.label}</span>
+                {selectedOption?.value === option.value && (
+                  <span className="ml-auto text-primary-400">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {error && (
+        <span className="modern-input-error flex items-center gap-1 mt-1">
+          <AlertCircle className="w-3 h-3" />
+          {error}
+        </span>
+      )}
+      
+      {helperText && !error && (
+        <span className="modern-input-helper mt-1">
+          {helperText}
+        </span>
+      )}
+    </div>
+  );
+};
+
+export default ModernSelect;
+
 import React, { useState } from 'react';
 import { ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -126,8 +278,8 @@ const ModernSelect = React.forwardRef<HTMLDivElement, ModernSelectProps>((props,
               'text-emerald-400': isFocused,
               'text-red-400': hasError,
               'text-green-400': hasSuccess,
-              'text-slate-400': !isFocused && !hasError && !hasSuccess,
-              'text-slate-400/50': disabled,
+              'text-gray-400': !isFocused && !hasError && !hasSuccess,
+              'text-gray-400/50': disabled,
             }
           )}
         >

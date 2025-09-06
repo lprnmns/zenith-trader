@@ -296,7 +296,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6 mb-6">
               <h3 className="text-lg font-semibold text-primary mb-2">Strateji Bilgileri</h3>
-              <p className="text-sm text-slate-400">Kopya ticaret stratejiniz için temel bilgileri girin</p>
+              <p className="text-sm text-gray-400">Kopya ticaret stratejiniz için temel bilgileri girin</p>
             </div>
 
             <ModernInput
@@ -334,7 +334,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-6">
               <h3 className="text-lg font-semibold text-primary mb-2">Borsa Ayarları</h3>
-              <p className="text-sm text-slate-400">İşlem yapacağınız borsayı ve kopyalama modunu seçin</p>
+              <p className="text-sm text-gray-400">İşlem yapacağınız borsayı ve kopyalama modunu seçin</p>
             </div>
 
             {/* OKX Credentials Auto-fill */}
@@ -381,14 +381,15 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     
                     {credentialsInfo.okxApiKey && credentialsInfo.okxApiSecret && credentialsInfo.okxPassphrase && (
                       <div className="flex items-center gap-2 mt-3">
-                        <button
+                        <ModernButton
                           type="button"
+                          variant="success"
+                          size="sm"
                           onClick={handleUseCredentials}
-                          className="modern-button sm success"
                         >
                           Bu Bilgileri Kullan
-                        </button>
-                        <span className="text-xs text-slate-400">
+                        </ModernButton>
+                        <span className="text-xs text-gray-400">
                           Kayıtlı OKX kimlik bilgileri stratejiye eklenecektir
                         </span>
                       </div>
@@ -464,10 +465,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-6 mb-6">
               <h3 className="text-lg font-semibold text-primary mb-2">Futures Ayarları</h3>
-              <p className="text-sm text-slate-400">Kaldıraç ve marj modunu ayarlayın</p>
+              <p className="text-sm text-gray-400">Kaldıraç ve marj modunu ayarlayın</p>
             </div>
 
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <label className="text-lg font-medium text-primary">
                   Kaldıraç: <span className="text-orange-400">{watchedValues.leverage}x</span>
@@ -483,9 +484,9 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   min="1"
                   max="125"
                   {...methods.register('leverage', { valueAsNumber: true })}
-                  className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider accent-orange-500"
+                  className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
                 />
-                <div className="flex justify-between text-sm text-slate-400">
+                <div className="flex justify-between text-sm text-gray-400">
                   <span>1x</span>
                   <span className="text-orange-400">25x</span>
                   <span className="text-red-400">125x</span>
@@ -525,8 +526,8 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     onClick={() => setValue('sizingMethod', method as any)}
                     className={`p-3 border rounded-lg text-center transition-colors ${
                       watchedValues.sizingMethod === method
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-500/20'
+                        : 'border-gray-600 hover:border-gray-500'
                     }`}
                   >
                     <div className="font-medium">{method}</div>
@@ -554,7 +555,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     min="1"
                     max="100"
                     {...methods.register('percentageToCopy', { valueAsNumber: true })}
-                    className="flex-1"
+                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
                   />
                   <span className="w-12 text-center font-medium">
                     {watchedValues.percentageToCopy}%
@@ -729,11 +730,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold text-primary mb-2">Strateji Özeti</h3>
-              <p className="text-slate-400">Lütfen strateji ayarlarınızı kontrol edin</p>
+              <p className="text-gray-400">Lütfen strateji ayarlarınızı kontrol edin</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-gray-800/80 border-gray-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:border-gray-600">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <Info className="w-4 h-4" />
@@ -742,11 +743,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Adı:</span>
+                    <span className="text-gray-400">Adı:</span>
                     <span className="font-medium">{watchedValues.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Cüzdan:</span>
+                    <span className="text-gray-400">Cüzdan:</span>
                     <span className="font-mono text-xs">
                       {watchedValues.walletAddress?.slice(0, 6)}...{watchedValues.walletAddress?.slice(-4)}
                     </span>
@@ -754,7 +755,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <ExternalLink className="w-4 h-4" />
@@ -763,17 +764,17 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Platform:</span>
+                    <span className="text-gray-400">Platform:</span>
                     <span className="font-medium">{watchedValues.exchange}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Mod:</span>
+                    <span className="text-gray-400">Mod:</span>
                     <span className="font-medium">{watchedValues.copyMode}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
@@ -782,17 +783,17 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Kaldıraç:</span>
+                    <span className="text-gray-400">Kaldıraç:</span>
                     <span className="font-medium">{watchedValues.leverage}x</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Marj:</span>
+                    <span className="text-gray-400">Marj:</span>
                     <span className="font-medium">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-gray-800 border-gray-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
                     <Shield className="w-4 h-4" />
@@ -801,23 +802,23 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Stop Loss:</span>
+                    <span className="text-gray-400">Stop Loss:</span>
                     <span className="font-medium">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Günlük Limit:</span>
+                    <span className="text-gray-400">Günlük Limit:</span>
                     <span className="font-medium">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+            <div className="bg-gray-800/80 border border-gray-700 rounded-lg p-4 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:border-gray-600">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-success mt-0.5" />
                 <div>
                   <h4 className="font-medium text-primary">Strateji Hazır!</h4>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-sm text-gray-400 mt-1">
                     Strateji oluşturulduktan sonra belirtilen cüzdan adresini izlemeye başlayacaktır.
                     Tüm ayarları dikkatlice kontrol edin.
                   </p>
@@ -836,8 +837,8 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-900 border-slate-700 shadow-2xl">
-        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-slate-700">
+      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-gray-900 border-gray-700 shadow-2xl">
+        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
@@ -845,7 +846,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold text-primary">Strateji Oluştur</CardTitle>
-                <p className="text-sm text-slate-400">Yeni kopya ticaret stratejisi oluşturun</p>
+                <p className="text-sm text-gray-400">Yeni kopya ticaret stratejisi oluşturun</p>
               </div>
             </div>
             <ModernButton
@@ -853,7 +854,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               size="sm"
               onClick={onClose}
               leftIcon={<X className="w-4 h-4" />}
-              className="text-slate-400 hover:text-primary"
+              className="text-gray-400 hover:text-primary"
             />
           </div>
           
@@ -865,7 +866,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
 
-              <div className="flex items-center justify-between pt-6 border-t border-slate-700 bg-slate-800/50 -mx-6 px-6 -mb-6 pb-6">
+              <div className="flex items-center justify-between pt-6 border-t border-gray-700 bg-gray-800/50 -mx-6 px-6 -mb-6 pb-6">
                 <div className="flex items-center gap-3">
                   {currentStep > 0 && (
                     <ModernButton
