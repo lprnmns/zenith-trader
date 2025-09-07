@@ -18,6 +18,7 @@ const pushNotificationService = require('../services/pushNotificationService');
 const router = express.Router();
 const { analyzeWallet } = require('../services/analysisService');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { getEncryptedOKXCredentials } = require('../utils/encryption');
 const { validateStrategy, validateStrategyUpdate, validateStrategyExecution, handleValidationErrors } = require('../middleware/strategyValidation');
 
 // Import notification routes
@@ -209,6 +210,58 @@ router.get('/strategies', requireAuth, async (req, res) => {
 		console.error('[API] Get strategies error:', error);
 		res.status(500).json({ error: 'Stratejiler alınamadı.' });
 	}
+});
+
+// POST /api/strategies/quick - create quick strategy (only admin can create)
+router.post('/strategies/quick', requireAuth, async (req, res) => {
+  console.log('[API] Quick strategy request - User role:', req.user?.role, 'User ID:', req.user?.id);
+  try {
+    const { walletAddress, name } = req.body;
+    
+    if (!walletAddress || !name) {
+      return res.status(400).json({ error: 'Wallet address and name are required' });
+    }
+    
+    // Validate wallet address format
+    if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
+      return res.status(400).json({ error: 'Invalid wallet address format' });
+    }
+    
+    // Check if wallet address already exists
+    const existingStrategy = await prisma.strategy.findFirst({
+      where: { walletAddress }
+    });
+    
+    if (existingStrategy) {
+      return res.status(400).json({ error: 'Wallet address already in use' });
+    }
+    
+    // Pre-configured quick strategy settings
+    const quickStrategyData = {
+      name,
+      walletAddress,
+      exchange: 'OKX',
+      copyMode: 'Perpetual',
+      leverage: 3,
+      sizingMethod: 'Percentage of Wallet\'s Trade',
+      positionSize: 100,
+      percentageToCopy: 100,
+      // Pre-configured OKX credentials (encrypted)
+      ...getEncryptedOKXCredentials(),
+      userId: req.user.userId,
+      lastChecked: new Date() // Şu anki zamandan itibaren sinyal kontrolü yap
+    };
+    
+    const strategy = await strategyService.createStrategy(quickStrategyData, req.user.userId);
+    
+    // Remove sensitive data before sending response
+    const { okxApiKey, okxApiSecret, okxPassphrase, ...safeStrategy } = strategy;
+    
+    res.json(safeStrategy);
+  } catch (error) {
+    console.error('[API] Quick strategy creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // POST /api/strategies - create (only admin can create)

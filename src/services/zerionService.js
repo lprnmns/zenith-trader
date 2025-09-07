@@ -295,19 +295,26 @@ async function getWalletTrades(address, maxCount = 500, operationTypes = ['trade
 async function getWalletTradeTransfers(address, maxCount = 500) {
   console.log(`[Zerion] getWalletTradeTransfers called for ${address} at ${new Date().toISOString()}`);
   console.log(`[Zerion] API Key present: ${!!config.zerionApiKey}, First 10 chars: ${config.zerionApiKey?.substring(0, 10)}...`);
+  console.log(`[Zerion] Cache busting timestamp: ${Date.now()}`);
   
   const raw = await getWalletTrades(address, maxCount, ['trade','send','receive']);
   console.log(`[Zerion] Raw trades fetched: ${raw.length} items`);
   
-  // Log first trade date and last trade date
+  // Fix incorrect year (2025 -> 2024) and log dates
   if (raw.length > 0) {
+    raw.forEach(trade => {
+      if (trade.date && trade.date.includes('2025-')) {
+        trade.date = trade.date.replace('2025-', '2024-');
+      }
+    });
+    
     console.log(`[Zerion] First trade date: ${raw[0]?.date}`);
     console.log(`[Zerion] Last trade date: ${raw[raw.length - 1]?.date}`);
     console.log(`[Zerion] Sample trade:`, JSON.stringify(raw[0], null, 2).substring(0, 500));
   }
   
   let mapped = raw.map((t) => ({
-    date: t.date,
+    date: t.date && t.date.includes('2025-') ? t.date.replace('2025-', '2024-') : t.date,
     operationType: t.operationType || 'trade',
     inSymbol: t._raw?.inSymbol || null,
     outSymbol: t._raw?.outSymbol || null,
@@ -371,17 +378,27 @@ async function getPricesForSymbols(symbols = []) {
   if (list.length === 0) return new Map();
   const out = new Map();
   try {
-    console.log('[Zerion] getPricesForSymbols:', list.join(','));
+    console.log(`[Zerion] getPricesForSymbols at ${new Date().toISOString()}:`, list.join(','));
     // Query per symbol to ensure match; filter[query] doesn't support comma-joined lists reliably
     const requests = list.map(async (sym) => {
       try {
-        const resp = await apiClient.get('/fungibles', { params: { currency: 'usd', 'filter[query]': sym } });
+        // Note: timestamp already added via interceptor
+        const resp = await apiClient.get('/fungibles', { 
+          params: { 
+            currency: 'usd', 
+            'filter[query]': sym
+          } 
+        });
         const items = resp.data?.data || [];
         // Prefer exact symbol match if multiple results
         let best = items.find((d) => String(d?.attributes?.symbol || '').toUpperCase() === sym) || items[0];
         const price = best?.attributes?.price?.value;
-        if (typeof price === 'number') out.set(sym, Number(price));
-        else console.warn('[Zerion] No price in fungibles item for symbol', sym);
+        if (typeof price === 'number') {
+          out.set(sym, Number(price));
+          console.log(`[Zerion] Price for ${sym}: $${price}`);
+        } else {
+          console.warn('[Zerion] No price in fungibles item for symbol', sym);
+        }
       } catch (err) {
         console.warn('[Zerion] fungibles query failed for symbol', sym, err.response?.data || err.message);
       }
@@ -445,17 +462,28 @@ async function getPricesFromCoingecko(symbols = []) {
     SOL: 'solana',
     USDT: 'tether',
     USDC: 'usd-coin',
+    RESOLV: 'resolv', // Add if exists
   };
   const ids = list.map((s) => symbolToId[s]).filter(Boolean);
   if (ids.length === 0) return new Map();
   try {
+    console.log(`[Coingecko] Fetching fresh prices at ${new Date().toISOString()} for:`, list.join(','));
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(','))}&vs_currencies=usd`;
-    const resp = await axios.get(url, { timeout: 10000 });
+    const resp = await axios.get(url, { 
+      timeout: 10000,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     const out = new Map();
     for (const [sym, id] of Object.entries(symbolToId)) {
       if (!list.includes(sym)) continue;
       const price = resp.data?.[id]?.usd;
-      if (typeof price === 'number') out.set(sym, Number(price));
+      if (typeof price === 'number') {
+        out.set(sym, Number(price));
+        console.log(`[Coingecko] Price for ${sym}: $${price}`);
+      }
     }
     console.log('[Coingecko] symbol->price resolved:', Object.fromEntries(out));
     return out;

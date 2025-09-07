@@ -114,11 +114,37 @@ class OKXService {
     }
 
     // Enstrüman bilgilerini al
-    async getInstruments(instType) {
-        // DÜZELTME: Dokümantasyondaki doğru ve kimlik doğrulama gerektiren endpoint kullanıldı.
-        const endpoint = `/api/v5/account/instruments?instType=${instType}`;
+    async getInstruments(instType, instId = null) {
+        let endpoint = `/api/v5/account/instruments?instType=${instType}`;
+        if (instId) {
+            endpoint += `&instId=${instId}`;
+        }
         const response = await this.makeRequest('GET', endpoint);
         return response.data || response;
+    }
+    
+    // Tek bir enstrümanın detay bilgilerini al
+    async getInstrumentDetails(instId) {
+        const endpoint = `/api/v5/account/instruments?instType=SWAP&instId=${instId}`;
+        const response = await this.makeRequest('GET', endpoint);
+        const instruments = response.data || response;
+        return instruments && instruments.length > 0 ? instruments[0] : null;
+    }
+    
+    // Get open positions
+    async getPositions(instType = 'SWAP', instId = null) {
+        let endpoint = '/api/v5/account/positions';
+        const params = {};
+        if (instType) params.instType = instType;
+        if (instId) params.instId = instId;
+        
+        const queryString = new URLSearchParams(params).toString();
+        if (queryString) {
+            endpoint += '?' + queryString;
+        }
+        
+        const response = await this.makeRequest('GET', endpoint);
+        return response.data || [];
     }
 }
 

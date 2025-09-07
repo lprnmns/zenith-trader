@@ -382,6 +382,14 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   </div>
                 )}
 
+                {credentialsInfo && (!credentialsInfo.okxApiKey || !credentialsInfo.okxApiSecret || !credentialsInfo.okxPassphrase) && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
+                    <p className="text-sm text-amber-400">
+                      ⚠️ Profilinizde kayıtlı OKX kimlik bilgileri bulunamadı. Lütfen profil ayarlarınızdan OKX API bilgilerinizi ekleyin veya aşağıdaki alanlara manuel olarak girin.
+                    </p>
+                  </div>
+                )}
+
                 {credentialsInfo && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -999,34 +1007,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="strategy-wizard modern-dialog w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl" style={{ backgroundColor: 'rgba(30, 41, 59, 0.95)', borderColor: 'rgba(156, 163, 175, 0.3)' }}>
-        <CardHeader className="pb-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-bold text-gray-100">Strateji Oluştur</CardTitle>
-                <p className="text-sm text-gray-400">Yeni kopya ticaret stratejisi oluşturun</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg transition-all hover:bg-gray-700/50"
-              style={{
-                color: '#9ca3af'
-              }}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <StepProgressIndicator steps={stepProgressData} />
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-y-auto">
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b border-gray-700 p-6 -mx-6 -mt-6 mb-6">
+        <StepProgressIndicator steps={stepProgressData} />
+      </div>
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {renderStepContent()}
@@ -1113,9 +1097,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               </div>
             </form>
           </FormProvider>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
   );
 };
 

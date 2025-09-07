@@ -31,11 +31,29 @@ interface AuthState {
 const API_BASE = 'http://localhost:3001/api';
 
 export const useAuthStore = create<AuthState>(
-  (set, get) => ({
+  (set, get) => {
+    // Initialize from localStorage
+    let initialState = {
       user: null,
       token: null,
       isAuthenticated: false,
       isAdmin: false,
+    };
+    
+    try {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed.state && parsed.state.token) {
+          initialState = parsed.state;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse auth storage:', error);
+    }
+    
+    return {
+      ...initialState,
       
       login: async (email: string, password: string) => {
         try {
@@ -100,6 +118,18 @@ export const useAuthStore = create<AuthState>(
       googleLogin: async (token: string, user: User) => {
         try {
           const isAdmin = user.role === 'ADMIN';
+          
+          // Save to localStorage
+          const authData = {
+            state: {
+              user,
+              token,
+              isAuthenticated: true,
+              isAdmin
+            }
+          };
+          localStorage.setItem('auth-storage', JSON.stringify(authData));
+          
           set({ 
             user, 
             token,
@@ -125,6 +155,9 @@ export const useAuthStore = create<AuthState>(
             },
           }).catch(console.error);
         }
+
+        // Clear localStorage
+        localStorage.removeItem('auth-storage');
 
         set({ 
           user: null, 
@@ -240,5 +273,6 @@ export const useAuthStore = create<AuthState>(
           return { success: false, error: 'Network error occurred' };
         }
       },
-    })
-  );
+    };
+  }
+);

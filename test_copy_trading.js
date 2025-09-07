@@ -33,7 +33,7 @@ const TEST_CONFIG = {
     LONG: 3,
     SHORT: 1
   },
-  minPositionSize: 10, // USDT
+  minPositionSize: 5, // USDT - test için düşürüldü
   maxPositionSize: 10000, // USDT
   lookbackDays: 90, // 3 months
   retryAttempts: 3,
@@ -53,6 +53,7 @@ class CopyTradingTestScript {
     this.okxConfig = {};
     this.tradesToExecute = [];
     this.executedTrades = [];
+    this.currentPositions = new Map(); // token -> positionSize
   }
 
   // Ana çalıştırma metodu
@@ -237,18 +238,43 @@ class CopyTradingTestScript {
         throw new Error('Wallet analizi başarısız oldu');
       }
       
-      // İşlenecek işlemleri filtrele
-      this.tradesToExecute = this.walletAnalysis.tradeHistory.filter(trade => {
-        // Tüm geçmiş işlemleri al (tarih filtresini kaldır)
-        // Sadece minimum boyut kontrolü yap
-        return trade.amountUsd >= TEST_CONFIG.minPositionSize;
+      // İşlenecek işlemleri filtrele - Hem BUY hem SELL işlemlerini dahil et
+      this.tradesToExecute = [];
+      
+      // BUY işlemlerini ekle
+      const buyTrades = this.walletAnalysis.tradeHistory.filter(trade => {
+        return trade.action === 'BUY' && trade.amountUsd >= TEST_CONFIG.minPositionSize;
       });
+      
+      // SELL işlemlerini ekle (satışlar, purchase kayıtlarının içindeki sales dizisinde bulunur)
+      const sellTrades = [];
+      this.walletAnalysis.tradeHistory.forEach(trade => {
+        if (trade.sales && Array.isArray(trade.sales)) {
+          trade.sales.forEach(sale => {
+            if (sale.amountSoldUsd >= TEST_CONFIG.minPositionSize) {
+              sellTrades.push({
+                ...trade,
+                action: 'SELL',
+                amountUsd: sale.amountSoldUsd,
+                date: sale.date,
+                saleDetails: sale
+              });
+            }
+          });
+        }
+      });
+      
+      // Tüm işlemleri birleştir
+      this.tradesToExecute = [...buyTrades, ...sellTrades];
       
       // İşlemleri tarihe göre sırala (en yeniden en eskiye)
       this.tradesToExecute.sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      // En fazla 10 işlem al (test için)
-      this.tradesToExecute = this.tradesToExecute.slice(0, 10);
+      // SADECE WBTC işlemlerini filtrele
+      this.tradesToExecute = this.tradesToExecute.filter(trade => trade.asset === 'WBTC');
+      
+      console.log(chalk.blue(`🎯 SADECE WBTC işlemleri filtrelendi`));
+      console.log(chalk.blue(`📊 ${this.tradesToExecute.length} adet WBTC işlemi bulundu (${buyTrades.length} BUY, ${sellTrades.length} SELL)`));
       
       spinner.succeed(chalk.green(`✅ Wallet analizi tamamlandı`));
       console.log(chalk.blue(`📊 ${this.tradesToExecute.length} adet işlem bulundu`));
@@ -376,23 +402,48 @@ class CopyTradingTestScript {
     const spinner = ora('İşlem gönderiliyor...').start();
     
     try {
+      const token = trade.asset;
+      const currentPosSize = this.currentPositions.get(token) || 0;
+      
+      // Pozisyon takibi için orijinal işlem miktarını hesapla
+      const originalTradeAmount = trade.amountUsd;
+      
       // Sinyal objesi oluştur
       const signal = {
         type: trade.action,
         token: trade.asset,
-        amount: calculation.positionSize,
-        percentage: calculation.percentage,
+        amount: calculation.positionSize, // Hesaplanan pozisyon büyüklüğü
+        originalAmount: originalTradeAmount, // Orijinal işlem miktarı
+        currentPosSize: currentPosSize, // Mevcut pozisyon büyüklüğü
+        percentage: calculation.percentage, // Kopyalanan risk yüzdesi
         leverage: calculation.leverage,
         totalValue: this.walletAnalysis.totalValue
       };
+      
+      console.log(`📊 Pozisyon durumu:`);
+      console.log(`   Mevcut ${token} pozisyonu: $${currentPosSize.toFixed(2)}`);
+      console.log(`   İşlem miktarı: $${originalTradeAmount.toFixed(2)}`);
       
       // İşlemi yap
       const result = await this.copyTradingService.processPositionSignal(signal, this.userBalance);
       
       if (result.success) {
         spinner.succeed(chalk.green('✅ İŞLEM BAŞARILI'));
-        console.log(chalk.blue(`   Emir ID: ${result.orderId}`));
-        console.log(chalk.blue(`   Durum: ${result.status}`));
+        
+        if (result.results && result.results.length > 0) {
+          console.log(chalk.blue(`   Toplam Emir: ${result.totalOrders}`));
+          result.results.forEach((res, index) => {
+            console.log(chalk.blue(`   ${index + 1}. ${res.type}: ${res.orderId} (${res.positionSide})`));
+          });
+        } else {
+          console.log(chalk.blue(`   Emir ID: ${result.orderId}`));
+          console.log(chalk.blue(`   Durum: ${result.status}`));
+        }
+        
+        // Pozisyon durumunu güncelle
+        this.updatePosition(token, trade.action, calculation.positionSize, originalTradeAmount);
+        
+        console.log(chalk.green(`   Güncel ${token} pozisyonu: $${this.currentPositions.get(token)?.toFixed(2) || 0}`));
         
         this.executedTrades.push({
           trade,
@@ -415,6 +466,22 @@ class CopyTradingTestScript {
     }
   }
 
+  // Pozisyon durumunu güncelle
+  updatePosition(token, action, positionSize, originalAmount) {
+    const currentPos = this.currentPositions.get(token) || 0;
+    
+    if (action === 'BUY') {
+      // Alışta pozisyon ekle
+      this.currentPositions.set(token, currentPos + positionSize);
+    } else if (action === 'SELL') {
+      // Satışta pozisyon azalt
+      const newPos = Math.max(0, currentPos - positionSize);
+      this.currentPositions.set(token, newPos);
+    }
+    
+    console.log(`🔄 Pozisyon güncellendi: ${token} = $${this.currentPositions.get(token)?.toFixed(2) || 0}`);
+  }
+
   // Pozisyon hesaplaması yap
   calculatePosition(trade) {
     // Cüzdan toplam değerini farklı alanlardan dene
@@ -430,14 +497,38 @@ class CopyTradingTestScript {
       walletValue = totalTradeValue > 0 ? totalTradeValue : 100000; // Fallback değer
     }
     
-    // Yüzdeyi hesapla (max %20 ile sınırla)
-    const percentage = walletValue > 0 ? Math.min((trade.amountUsd / walletValue) * 100, 20) : 10; // Max %20
+    // Kopyalanan cüzdanın risk yüzdesini hesapla (sınırlama olmadan)
+    const percentage = walletValue > 0 ? (trade.amountUsd / walletValue) * 100 : 10; // Gerçek risk yüzdesi
     const leverage = trade.action === 'BUY' ? TEST_CONFIG.defaultLeverage.LONG : TEST_CONFIG.defaultLeverage.SHORT;
     
-    // Pozisyon boyutunu kullanıcı bakiyesine göre hesapla (max %10 kullan)
-    const userPercentage = Math.min(percentage, 10); // Kullanıcı bakiyesinin max %10'u
-    const positionSize = (this.userBalance * userPercentage) / 100;
-    const totalExposure = positionSize * leverage;
+    // DOĞRU MANTIK: Kopyalanan cüzdanın risk yüzdesini uygula
+    // Kopyalanan cüzdan %52.6 risk alıyorsa, siz de %52.6 risk almaya çalışın
+    let userPercentage = percentage; // Gerçek risk yüzdesi
+    let positionSize = (this.userBalance * userPercentage) / 100;
+    let totalExposure = positionSize * leverage;
+    
+    // Eğer pozisyon bakiyeyi aşıyorsa, bakiyenin tamamını kullan
+    if (positionSize > this.userBalance) {
+      console.log(`⚠️  Yetersiz bakiye uyarısı:`);
+      console.log(`   İstenen pozisyon: $${positionSize.toFixed(2)} (%${userPercentage.toFixed(2)})`);
+      console.log(`   Mevcut bakiye: $${this.userBalance.toFixed(2)}`);
+      
+      // Bakiyenin tamamını kullan
+      positionSize = this.userBalance;
+      userPercentage = 100; // %100 bakiyeyi kullan
+      totalExposure = positionSize * leverage;
+      
+      console.log(`   💡 Çözüm: Bakiyenin tamamı kullanılıyor`);
+    }
+    
+    console.log(`🧮 Gerçek kopyalama mantığı:`);
+    console.log(`   Kopyalanan cüzdan değeri: $${walletValue.toFixed(2)}`);
+    console.log(`   Kopyalanan işlem: $${trade.amountUsd.toFixed(2)}`);
+    console.log(`   Kopyalanan risk: %${percentage.toFixed(2)}`);
+    console.log(`   Sizin bakiyeniz: $${this.userBalance.toFixed(2)}`);
+    console.log(`   Sizin pozisyonunuz: $${positionSize.toFixed(2)} (%${userPercentage.toFixed(2)})`);
+    console.log(`   Kaldıraç: ${leverage}x`);
+    console.log(`   Toplam maruziyet: $${totalExposure.toFixed(2)}`);
     
     return {
       percentage,
@@ -445,7 +536,7 @@ class CopyTradingTestScript {
       leverage,
       positionSize,
       totalExposure,
-      walletValue // Debug için eklendi
+      walletValue
     };
   }
 

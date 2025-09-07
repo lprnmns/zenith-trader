@@ -36,6 +36,7 @@ const corsOptions = {
       'http://localhost:5174',
       'http://localhost:5175',
       'http://localhost:5176',
+      'http://localhost:5177',
       'http://localhost:3000',
       'http://localhost:3001'
     ];
@@ -63,8 +64,8 @@ app.use('/', healthRoutes);
 async function startServer() {
 	console.log('Sunucu başlatılıyor...');
 
-	// Arka plan strateji motorunu başlat
-	await strategyEngine.start();
+	// Arka plan strateji motorunu başlat (5 dakikada bir kontrol)
+	await strategyEngine.start(300000); // 5 dakika = 300000 ms
 
 	// Alpha Finder engine: DISABLED (manual control only)
 	// try {

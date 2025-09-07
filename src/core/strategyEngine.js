@@ -17,11 +17,12 @@ async function loadStrategies() {
 	activeStrategies.clear();
 
 	for (const dbStrategy of strategiesFromDB) {
+		// API bilgileri artık düz metin olarak saklanıyor
 		const okxClient = new OKXService(
 			dbStrategy.okxApiKey,
 			dbStrategy.okxApiSecret,
 			dbStrategy.okxPassphrase,
-			true // Demo mode
+			false // Live mode - API anahtarları canlı ortam için
 		);
 
 		activeStrategies.set(dbStrategy.id, {
@@ -50,30 +51,49 @@ async function runSignalCheck() {
 			for (const signal of newSignals) {
 				try {
 					// 1) İzin verilen token listesi kontrolü
-					if (!Array.isArray(strategy.allowedTokens) || !strategy.allowedTokens.includes(signal.token)) {
+					// Eğer allowedTokens boş ise tüm coinlere izin var demektir
+					if (Array.isArray(strategy.allowedTokens) && strategy.allowedTokens.length > 0 && !strategy.allowedTokens.includes(signal.token)) {
 						console.log(`-> [${strategy.name}] Emir Atlandı: ${signal.token} izin verilenler listesinde değil.`);
 						continue;
 					}
 
-					// 2) Emir parametreleri (SWAP trading için - futures demo başarılı)
+					// 2) Emir parametreleri (SWAP trading için)
 					const instrumentId = `${signal.token}-USDT-SWAP`;
 					const side = signal.type === 'BUY' ? 'buy' : 'sell';
 					const orderType = 'market';
 
+					// Önce OKX'ten mevcut bakiyeyi çekelim
+					let accountBalance;
+					try {
+						const balanceResponse = await strategy.okxClient.getBalance();
+						const usdtBalance = balanceResponse[0]?.details?.find(d => d.ccy === 'USDT');
+						accountBalance = parseFloat(usdtBalance?.availBal || 0);
+						console.log(`💰 [${strategy.name}] Mevcut bakiye: ${accountBalance.toFixed(2)} USDT`);
+					} catch (balanceError) {
+						console.error(`❌ [${strategy.name}] Bakiye alınamadı:`, balanceError.message);
+						continue;
+					}
+
 					// Pozisyon yüzdesine göre işlem büyüklüğü hesaplama
-					// Cüzdanın toplam değerinin yüzdesi kadar işlem aç
-					const walletTotalValue = signal.totalValue;
-					const positionPercentage = signal.percentage;
-					const sizeInUsdt = (walletTotalValue * positionPercentage) / 100;
+					// Small balance strategy: Use fixed percentage (30%) of our balance
+					// This ensures we can actually place orders with our small balance
+					const POSITION_SIZE_PERCENTAGE = 30; // Use 30% of balance per trade
+					const sizeInUsdt = (accountBalance * POSITION_SIZE_PERCENTAGE) / 100;
+					
+					// Log original signal percentage for reference
+					console.log(`📊 [${strategy.name}] Signal: ${signal.token} ${signal.type} (tracked wallet: ${signal.percentage.toFixed(2)}%)`);
 					
 					if (!sizeInUsdt || sizeInUsdt <= 0) {
 						console.log(`-> [${strategy.name}] Emir Atlandı: Geçersiz sizeInUsdt (${sizeInUsdt}).`);
 						continue;
 					}
 					
-					// Minimum işlem büyüklüğü kontrolü (10 USDT)
-					if (sizeInUsdt < 10) {
-						console.log(`-> [${strategy.name}] Emir Atlandı: Çok küçük pozisyon (${sizeInUsdt.toFixed(2)} USDT).`);
+					// Minimum işlem büyüklüğü kontrolü
+					// For futures, we need at least margin/leverage amount available
+					// With 3x leverage, 3 USDT position needs 1 USDT margin
+					const minPositionSize = 3;
+					if (sizeInUsdt < minPositionSize) {
+						console.log(`-> [${strategy.name}] Emir Atlandı: Çok küçük pozisyon (${sizeInUsdt.toFixed(2)} USDT < ${minPositionSize} USDT min).`);
 						continue;
 					}
 					
@@ -81,25 +101,63 @@ async function runSignalCheck() {
 					const leverage = signal.leverage || 3;
 
 					// 3) Kaldıraç ayarla (SWAP trading için)
+					// OKX futures için posSide parametresi gerekli
+					const posSide = signal.type === 'BUY' ? 'long' : 'short';
 					try {
 						console.log(`🔧 [${strategy.name}] Kaldıraç ayarlanıyor...`);
-						await strategy.okxClient.setLeverage(instrumentId, leverage.toString(), 'isolated');
+						await strategy.okxClient.setLeverage(instrumentId, leverage.toString(), 'isolated', posSide);
 						console.log(`✅ [${strategy.name}] Kaldıraç ${leverage}x ayarlandı.`);
 					} catch (leverageError) {
 						console.log(`❌ [${strategy.name}] Kaldıraç ayarlanamadı:`, leverageError?.response?.data?.msg || leverageError?.message);
 						continue;
 					}
 
-					// 4) Son fiyatı al ve büyüklüğü hesapla
+					// 4) Enstrüman bilgilerini al
+					let instrumentInfo;
+					try {
+						instrumentInfo = await strategy.okxClient.getInstrumentDetails(instrumentId);
+						if (!instrumentInfo) {
+							console.log(`⚠️ [${strategy.name}] ${instrumentId} bilgisi alınamadı`);
+							continue;
+						}
+					} catch (instError) {
+						console.log(`⚠️ [${strategy.name}] Enstrüman bilgisi alınamadı:`, instError.message);
+						continue;
+					}
+					
+					// 5) Son fiyatı al
 					const tickerArr = await strategy.okxClient.getTicker(instrumentId);
 					const lastPrice = parseFloat(Array.isArray(tickerArr) ? tickerArr[0]?.last : tickerArr?.last);
 					if (!lastPrice || lastPrice <= 0) {
 						throw new Error('Geçerli fiyat alınamadı.');
 					}
 
-					// SWAP trading için contract sayısı hesaplama
-					const sizeInContracts = sizeInUsdt / lastPrice;
-					const finalSize = sizeInContracts.toFixed(2); // SWAP için 2 decimal
+					// 6) Contract bilgilerini parse et
+					const contractValue = parseFloat(instrumentInfo.ctVal);
+					const lotSize = parseFloat(instrumentInfo.lotSz);
+					const minSize = parseFloat(instrumentInfo.minSz);
+					
+					console.log(`📈 [${strategy.name}] ${signal.token} bilgileri:`, {
+						contractValue,
+						lotSize,
+						minSize,
+						lastPrice
+					});
+					
+					// 7) Contract sayısını hesapla
+					let sizeInContracts = sizeInUsdt / (contractValue * lastPrice);
+					
+					// Lot size'a yuvarla
+					sizeInContracts = Math.round(sizeInContracts / lotSize) * lotSize;
+					
+					// Minimum size kontrolü
+					if (sizeInContracts < minSize) {
+						sizeInContracts = minSize;
+					}
+					
+					// Hassasiyet ayarlaması
+					const decimalPlaces = lotSize < 1 ? Math.abs(Math.floor(Math.log10(lotSize))) : 0;
+					const finalSize = sizeInContracts.toFixed(decimalPlaces);
 
 					// Size kontrolü
 					if (Number(finalSize) <= 0) {
@@ -107,7 +165,7 @@ async function runSignalCheck() {
 						continue;
 					}
 
-					console.log(`-> [${strategy.name}] Emir Hazırlandı: ${side.toUpperCase()} ${finalSize} ${signal.token} (${sizeInUsdt.toFixed(2)} USDT x${leverage})`);
+					console.log(`-> [${strategy.name}] Emir Hazırlandı: ${side.toUpperCase()} ${finalSize} ${signal.token} (${sizeInUsdt.toFixed(2)} USDT x${leverage}, ${POSITION_SIZE_PERCENTAGE}% of balance)`);
 					console.log(`🔍 [${strategy.name}] Emir detayları:`, {
 						instrumentId,
 						side,
@@ -117,7 +175,8 @@ async function runSignalCheck() {
 						lastPrice,
 						sizeInContracts: sizeInContracts.toFixed(4),
 						finalSize,
-						positionPercentage: positionPercentage.toFixed(2) + '%'
+						actualPercentage: POSITION_SIZE_PERCENTAGE + '%',
+						trackedWalletPercentage: signal.percentage.toFixed(2) + '%'
 					});
 
 					// 5) Gerçek emir gönderimi (SWAP trading)
@@ -128,6 +187,7 @@ async function runSignalCheck() {
 							instrumentId,
 							'isolated',
 							side,
+							posSide,
 							orderType,
 							finalSize
 						);
@@ -212,9 +272,22 @@ async function runSignalCheck() {
 async function start(intervalMs = 30000) {
 	await loadStrategies();
 	console.log(`[Engine] Strateji motoru başlatıldı. Kontrol aralığı: ${intervalMs / 1000} saniye.`);
+	
+	// Sinyal kontrol döngüsü
 	setInterval(runSignalCheck, intervalMs);
+	
+	// Yeni strateji kontrol döngüsü (her 30 saniyede bir)
+	setInterval(async () => {
+		const currentCount = activeStrategies.size;
+		await loadStrategies();
+		const newCount = activeStrategies.size;
+		
+		if (newCount > currentCount) {
+			console.log(`[Engine] ${newCount - currentCount} yeni strateji yüklendi! Toplam: ${newCount}`);
+		}
+	}, 30000);
 }
 
-module.exports = { start, loadStrategies };
+module.exports = { start, loadStrategies, runSignalCheck };
 
 

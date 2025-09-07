@@ -30,7 +30,13 @@
       "Bash(npx playwright install:*)",
       "Bash(npx playwright test:*)",
       "Bash(start:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(psql:*)",
+      "Bash(timeout:*)",
+      "Bash(npm start:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git push:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

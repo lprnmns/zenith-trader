@@ -60,9 +60,12 @@ export const useStrategiesStore = create<StrategiesState>(
   fetchStrategies: async () => {
     set({ isLoading: true, error: null });
     try {
+      console.log('[StrategiesStore] Fetching strategies...');
       const response = await apiGetStrategies();
+      console.log('[StrategiesStore] Strategies response:', response);
       set({ strategies: response.data, isLoading: false });
     } catch (error) {
+      console.error('[StrategiesStore] Fetch error:', error);
       set({ error: 'Failed to fetch strategies', isLoading: false });
     }
   },
