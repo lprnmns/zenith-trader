@@ -18,42 +18,55 @@ class WalletNotificationService {
         try {
             console.log('[WalletNotification] Subscribing user', userId, 'to wallet', walletAddress);
             
-            // Check if subscription already exists
-            const existingSubscription = await prisma.userWalletNotification.findFirst({
+            // Create or update wallet notification record
+            const walletSub = await prisma.userWalletNotification.upsert({
                 where: {
-                    userId,
-                    walletAddress
-                }
-            });
-            
-            if (existingSubscription) {
-                // Update existing subscription
-                const walletSub = await prisma.userWalletNotification.update({
-                    where: { id: existingSubscription.id },
-                    data: {
-                        subscription: JSON.stringify(subscription),
-                        isActive: true
+                    userId_walletAddress: {
+                        userId,
+                        walletAddress
                     }
-                });
-                console.log('[WalletNotification] Subscription updated with ID:', walletSub.id);
-                return walletSub;
-            }
-            
-            // Create new subscription
-            const walletSub = await prisma.userWalletNotification.create({
-                data: {
+                },
+                update: {
+                    isActive: true
+                },
+                create: {
                     userId,
                     walletAddress,
-                    subscription: JSON.stringify(subscription),
                     isActive: true
                 }
             });
             
-            console.log('[WalletNotification] Subscription created with ID:', walletSub.id);
+            console.log('[WalletNotification] Wallet notification record created/updated with ID:', walletSub.id);
             
-            // Send welcome notification only for push subscriptions (not browser fallbacks)
+            // For push subscriptions, also create/update push subscription record
             const subObj = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
             if (subObj.endpoint !== 'browser-notification') {
+                // Create push subscription
+                await prisma.pushSubscription.upsert({
+                    where: {
+                        endpoint: subObj.endpoint
+                    },
+                    update: {
+                        p256dh: subObj.keys.p256dh,
+                        auth: subObj.keys.auth,
+                        keys: subObj.keys,
+                        isActive: true,
+                        lastUsed: new Date()
+                    },
+                    create: {
+                        userId,
+                        endpoint: subObj.endpoint,
+                        p256dh: subObj.keys.p256dh,
+                        auth: subObj.keys.auth,
+                        keys: subObj.keys,
+                        isActive: true,
+                        userAgent: 'Unknown' // navigator is not available in backend
+                    }
+                });
+                
+                console.log('[WalletNotification] Push subscription created/updated');
+                
+                // Send welcome notification
                 await this.sendNotification(subscription, {
                     title: '🔔 Wallet Tracking Active',
                     body: `You will receive notifications for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
@@ -171,41 +184,67 @@ class WalletNotificationService {
      */
     async notifyWalletActivity(walletAddress, activity) {
         try {
-            // Get all active subscriptions for this wallet
-            const subscriptions = await prisma.userWalletNotification.findMany({
+            // Get all active wallet notifications for this wallet
+            const walletNotifications = await prisma.userWalletNotification.findMany({
                 where: {
                     walletAddress,
                     isActive: true
+                },
+                include: {
+                    user: {
+                        include: {
+                            pushSubscriptions: {
+                                where: {
+                                    isActive: true
+                                }
+                            }
+                        }
+                    }
                 }
             });
             
-            console.log(`[WalletNotification] Sending notifications for wallet ${walletAddress} to ${subscriptions.length} subscribers`);
+            console.log(`[WalletNotification] Sending notifications for wallet ${walletAddress} to ${walletNotifications.length} subscribers`);
             
-            for (const sub of subscriptions) {
-                const payload = {
-                    title: `🚀 Wallet Activity`,
-                    body: this.formatActivityMessage(activity),
-                    icon: '/pwa-192x192.png',
-                    badge: '/pwa-96x96.svg',
-                    data: {
-                        walletAddress,
-                        activity
-                    },
-                    tag: `wallet-${walletAddress}`,
-                    renotify: true,
-                    requireInteraction: false,
-                    actions: [
-                        {
-                            action: 'view',
-                            title: 'View Details'
+            let notificationCount = 0;
+            
+            for (const walletNotif of walletNotifications) {
+                // Send to all active push subscriptions for this user
+                for (const pushSub of walletNotif.user.pushSubscriptions) {
+                    const payload = {
+                        title: `🚀 Wallet Activity`,
+                        body: this.formatActivityMessage(activity),
+                        icon: '/pwa-192x192.png',
+                        badge: '/pwa-96x96.svg',
+                        data: {
+                            walletAddress,
+                            activity
+                        },
+                        tag: `wallet-${walletAddress}`,
+                        renotify: true,
+                        requireInteraction: false,
+                        actions: [
+                            {
+                                action: 'view',
+                                title: 'View Details'
+                            }
+                        ]
+                    };
+                    
+                    const subscription = {
+                        endpoint: pushSub.endpoint,
+                        keys: {
+                            auth: pushSub.auth,
+                            p256dh: pushSub.p256dh
                         }
-                    ]
-                };
-                
-                await this.sendNotification(sub.subscription, payload);
+                    };
+                    
+                    await this.sendNotification(subscription, payload);
+                    notificationCount++;
+                }
             }
             
-            return subscriptions.length;
+            console.log(`[WalletNotification] Sent ${notificationCount} push notifications`);
+            return notificationCount;
         } catch (error) {
             console.error('[WalletNotification] Notify activity error:', error);
             throw error;
