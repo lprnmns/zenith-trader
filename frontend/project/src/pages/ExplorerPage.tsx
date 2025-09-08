@@ -320,26 +320,14 @@ export function ExplorerPage() {
                   key={wallet.address || wallet.id || index}
                   className="group flex items-center p-4 border-b border-slate-800 transition-colors duration-200 hover:bg-slate-800/50 cursor-pointer"
                 >
-                  {/* Left side - Hidden Analyze button that appears on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-4">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAnalyzeWallet(wallet.address)}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
-                    >
-                      <BarChart3 className="w-4 h-4 mr-1" />
-                      Analyze
-                    </Button>
-                  </div>
-
-                  {/* Main content columns */}
-                  <div className="flex-grow grid grid-cols-5 gap-4 items-center">
+                  {/* Main content - aligned to left */}
+                  <div className="flex-grow grid grid-cols-6 gap-4 items-center text-left">
                     {/* Wallet Name & Address */}
-                    <div className="min-w-0">
-                      <div className="text-white font-medium truncate">
+                    <div className="col-span-2">
+                      <div className="text-white font-medium">
                         {wallet.name || 'Unknown Wallet'}
                       </div>
-                      <div className="text-slate-400 text-xs font-mono truncate">
+                      <div className="text-slate-400 text-xs font-mono">
                         {truncateAddress(wallet.address)}
                       </div>
                     </div>
@@ -389,7 +377,10 @@ export function ExplorerPage() {
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-4">
                     <Button 
                       size="sm" 
-                      onClick={() => handleAnalyzeWallet(wallet.address)}
+                      onClick={() => {
+                        setWalletAddress(wallet.address);
+                        handleAnalyze();
+                      }}
                       className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
                     >
                       <BarChart3 className="w-4 h-4 mr-1" />
