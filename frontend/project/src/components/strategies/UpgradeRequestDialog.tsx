@@ -15,6 +15,7 @@ interface UpgradeRequestDialogProps {
 export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDialogProps) {
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState(user?.email || '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,7 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
         },
-        body: JSON.stringify({ email: user?.email })
+        body: JSON.stringify({ email })
       });
 
       const data = await response.json();
@@ -70,9 +71,10 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
               <Input
                 id="email"
                 type="email"
-                value={user?.email || ''}
-                readOnly
-                className="pl-10 bg-slate-700/50 border-slate-600 text-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -83,7 +85,7 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+              className="flex-1 bg-slate-600 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
             >
               <X className="w-4 h-4 mr-2" />
               Cancel
