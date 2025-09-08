@@ -276,24 +276,24 @@ export function ExplorerPage() {
                   <div className="w-16">
                     <Skeleton className="h-8 w-16" />
                   </div>
-                  <div className="flex-grow grid grid-cols-5 gap-4 items-center">
-                    <div>
+                  <div className="flex-grow grid grid-cols-6 gap-4 items-center text-left">
+                    <div className="col-span-2">
                       <Skeleton className="h-4 w-32 mb-1" />
                       <Skeleton className="h-3 w-24" />
                     </div>
-                    <div className="text-right">
-                      <Skeleton className="h-5 w-20 ml-auto" />
-                      <Skeleton className="h-3 w-16 ml-auto mt-1" />
+                    <div className="text-left">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-3 w-16 mt-1" />
                     </div>
-                    <div className="text-right">
-                      <Skeleton className="h-5 w-16 ml-auto" />
-                      <Skeleton className="h-3 w-12 ml-auto mt-1" />
+                    <div className="text-left">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-3 w-12 mt-1" />
                     </div>
-                    <div className="text-right">
-                      <Skeleton className="h-5 w-12 ml-auto" />
-                      <Skeleton className="h-3 w-16 ml-auto mt-1" />
+                    <div className="text-left">
+                      <Skeleton className="h-5 w-12" />
+                      <Skeleton className="h-3 w-16 mt-1" />
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-start">
                       <Skeleton className="h-6 w-16" />
                     </div>
                   </div>
@@ -318,81 +318,48 @@ export function ExplorerPage() {
               {filteredAndSorted.map((wallet, index) => (
                 <div 
                   key={wallet.address || wallet.id || index}
-                  className="group flex items-center p-4 border-b border-slate-800 transition-colors duration-200 hover:bg-slate-800/50 cursor-pointer"
+                  className="group flex items-center p-4 border-b border-slate-800 hover:bg-slate-800/50 transition-colors duration-200"
                 >
-                  {/* Left side - Hidden Analyze button that appears on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-4">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAnalyzeWallet(wallet.address)}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
-                    >
-                      <BarChart3 className="w-4 h-4 mr-1" />
-                      Analyze
-                    </Button>
-                  </div>
-
-                  {/* Main content columns */}
-                  <div className="flex-grow grid grid-cols-5 gap-4 items-center">
-                    {/* Wallet Name & Address */}
-                    <div className="min-w-0">
-                      <div className="text-white font-medium truncate">
-                        {wallet.name || 'Unknown Wallet'}
-                      </div>
-                      <div className="text-slate-400 text-xs font-mono truncate">
-                        {truncateAddress(wallet.address)}
-                      </div>
+                  
+                  {/* Ana İçerik Alanı (Sola Yaslı ve Genişleyen) */}
+                  {/* Değişiklik: 'grid-cols-6' ve sola yaslama için 'text-left' */}
+                  <div className="flex-grow grid grid-cols-6 gap-4 items-center text-left">
+                    
+                    {/* Sütun 1: Cüzdan Adı ve Adresi */}
+                    <div className="col-span-2">
+                      <p className="font-bold text-white">{wallet.name || 'Unknown Whale'}</p>
+                      <p className="text-xs text-slate-400 font-mono">{truncateAddress(wallet.address)}</p>
                     </div>
 
-                    {/* Total Value */}
-                    <div className="text-right">
-                      <div className="text-white text-lg font-bold">
-                        {formatLargeCurrency(wallet.totalValueUsd || 0)}
-                      </div>
-                      <div className="text-slate-500 text-xs font-medium flex items-center justify-end">
-                        Portfolio Value
-                        <Wallet className="h-3 w-3 inline-block ml-1 text-slate-400" />
-                      </div>
+                    {/* Sütun 2: Portföy Değeri */}
+                    <div className="text-left">
+                      <p className="font-semibold text-white">{formatLargeCurrency(wallet.totalValueUsd || 0)}</p>
+                      <p className="text-xs text-slate-500">Portfolio Value</p>
                     </div>
 
-                    {/* 30D PnL */}
-                    <div className="text-right">
-                      <div className={`text-lg font-bold ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent30d).toFixed(2)}%`}
-                      </div>
-                      <div className="text-slate-500 text-xs font-medium">30D PnL</div>
+                    {/* Sütun 3: 30 Günlük PnL */}
+                    <div className="text-left">
+                      <p className={`font-bold text-lg ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d).toFixed(2)}%`}
+                      </p>
+                      <p className="text-xs text-slate-500">30D PnL</p>
+                    </div>
+                    
+                    {/* Sütun 4: Akıllı Puan */}
+                    <div className="text-left">
+                      <p className="font-bold text-white">{wallet.smartScore == null ? '-' : Math.round(wallet.smartScore)}</p>
+                      <p className="text-xs text-slate-500">Smart Score</p>
                     </div>
 
-                    {/* Smart Score */}
-                    <div className="text-right">
-                      <div className="text-white text-lg font-bold">
-                        {wallet.smartScore == null ? '-' : Math.round(wallet.smartScore)}
-                      </div>
-                      <div className="text-slate-500 text-xs font-medium flex items-center justify-end">
-                        Smart Score
-                        <BrainCircuit className="h-3 w-3 inline-block ml-1 text-slate-400" />
-                      </div>
-                    </div>
-
-                    {/* Risk Level */}
-                    <div className="flex justify-end">
-                      <Badge 
-                        variant="outline" 
-                        className={`${getRiskBadgeStyle(wallet.riskLevel)} font-semibold px-3 py-1 text-xs`}
-                      >
-                        {wallet.riskLevel || 'Medium'}
-                      </Badge>
+                    {/* Sütun 5: Risk Rozeti */}
+                    <div className="flex justify-start">
+                        <Badge variant={getRiskVariant(wallet.riskLevel)}>{wallet.riskLevel || 'Medium'}</Badge>
                     </div>
                   </div>
-
-                  {/* Right side - Analyze button that appears on hover */}
+                  
+                  {/* Sağ Tarafta Beliren "Analyze" Butonu */}
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-4">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAnalyzeWallet(wallet.address)}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
-                    >
-                      <BarChart3 className="w-4 h-4 mr-1" />
+                    <Button size="sm" onClick={() => handleAnalyzeWallet(wallet.address)}>
                       Analyze
                     </Button>
                   </div>

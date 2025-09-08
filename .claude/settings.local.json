@@ -37,7 +37,9 @@
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
       "Bash(npm uninstall:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(npx prisma db pull:*)"
     ],
     "deny": [],
     "ask": []

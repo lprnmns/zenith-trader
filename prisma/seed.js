@@ -1,171 +1,88 @@
-// prisma/seed.js
+// backend/prisma/seed.js
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create or update admin user
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@zenithtrader.com' },
-    update: { 
-      password: adminPassword,
-      role: 'ADMIN' 
-    },
-    create: {
-      email: 'admin@zenithtrader.com',
-      password: adminPassword,
-      role: 'ADMIN'
-    },
-  });
-  console.log('Admin user created/updated:', adminUser.email);
+  console.log('Seeding process started...');
 
-  // Create or update demo user
-  const demoPassword = await bcrypt.hash('demo123', 10);
-  const demoUser = await prisma.user.upsert({
-    where: { email: 'demo@zenithtrader.com' },
-    update: { 
-      password: demoPassword,
-      role: 'USER' 
-    },
-    create: {
-      email: 'demo@zenithtrader.com',
-      password: demoPassword,
-      role: 'USER'
-    },
-  });
-  console.log('Demo user created/updated:', demoUser.email);
+  try {
+    // ÖNEMLİ ADIM: Mevcut tüm önerilen ve izlenen cüzdanları silerek temiz bir başlangıç yap.
+    console.log('Deleting old suggested and watched wallets...');
+    await prisma.$executeRaw`TRUNCATE TABLE "SuggestedWallet" RESTART IDENTITY CASCADE`;
+    await prisma.$executeRaw`TRUNCATE TABLE "WatchedWallet" RESTART IDENTITY CASCADE`;
+    console.log('Old data deleted.');
 
-  // Seed SuggestedWallets with real whale addresses
-  const suggestedWallets = [
-    { 
-      address: '0x3e3802b8fefd3103f85c192da4c1f1d6b2313e48', 
-      name: 'Whale #1 - Wintermute Trading',
-      riskLevel: 'High'
-    },
-    { 
-      address: '0x8c5865689eabe45645fa034e53d0c9995dccb9c9', 
-      name: 'Whale #2 - Jump Trading',
-      riskLevel: 'High'
-    },
-    { 
-      address: '0xc82b2e484b161d20eae386877d57c4e5807b5581', 
-      name: 'Whale #3 - Alameda Research',
-      riskLevel: 'Medium'
-    },
-    { 
-      address: '0x28c6c06298d514db089934071355e5743bf21d60', 
-      name: 'Whale #4 - Binance Hot Wallet',
-      riskLevel: 'High'
-    },
-    { 
-      address: '0x5754284f345afc66a98fbB0A0Afe71e0F007B949', 
-      name: 'Whale #5 - Coinbase Prime',
-      riskLevel: 'Medium'
-    },
-    { 
-      address: '0x6666666666666666666666666666666666666666', 
-      name: 'Whale #6 - DeFi Whale',
-      riskLevel: 'Medium'
-    },
-    { 
-      address: '0x42f9a8dd7a0c841e3915ab0cf0b4051a1a1a1a1a', 
-      name: 'Whale #7 - Smart Money',
-      riskLevel: 'Low'
-    },
-    { 
-      address: '0x7777777777777777777777777777777777777777', 
-      name: 'Whale #8 - Yield Farmer',
-      riskLevel: 'Low'
+    // Create admin user using raw SQL
+    console.log('Creating admin user...');
+    await prisma.$executeRaw`
+      INSERT INTO "User" (email, password, role, "isActive", "createdAt", "updatedAt") 
+      VALUES ('admin@zenithtrader.com', '$2a$10$rOZXp7mGXmHWK7vJtxB7uO5D3Q7J8Y.rKJ5L9n8mJ4q8wW2x6v0Oi', 'ADMIN', true, NOW(), NOW())
+      ON CONFLICT (email) DO UPDATE SET 
+        password = '$2a$10$rOZXp7mGXmHWK7vJtxB7uO5D3Q7J8Y.rKJ5L9n8mJ4q8wW2x6v0Oi',
+        role = 'ADMIN',
+        "isActive" = true,
+        "updatedAt" = NOW()
+    `;
+
+    // Get admin user ID
+    const adminUser = await prisma.$queryRaw`SELECT id FROM "User" WHERE email = 'admin@zenithtrader.com' LIMIT 1`;
+    const adminUserId = adminUser[0].id;
+
+    console.log('Admin user created/updated with ID:', adminUserId);
+
+    // Sadece ve sadece bu 3 cüzdanı ekle
+    const walletsToSeed = [
+      {
+        address: '0x3e3802b8fefd3103f85c192da4c1f1d6b2313e48',
+        name: 'Whale #1 - Wintermute',
+        riskLevel: 'High'
+      },
+      {
+        address: '0x8c5865689eabe45645fa034e53d0c9995dccb9c9',
+        name: 'Whale #5 - Coinbase',
+        riskLevel: 'Medium'
+      },
+      {
+        address: '0xc82b2e484b161d20eae386877d57c4e5807b5581',
+        name: 'Whale #3 - Alameda',
+        riskLevel: 'Medium'
+      }
+    ];
+
+    // Bu cüzdanları hem "izlenen" hem de "önerilen" listelerine ekleyelim
+    console.log('Seeding new wallets...');
+    for (const wallet of walletsToSeed) {
+      // Add to watched wallets for admin user
+      await prisma.$executeRaw`
+        INSERT INTO "WatchedWallet" (address, "userId", description, "createdAt", "updatedAt") 
+        VALUES (${wallet.address}, ${adminUserId}, ${`Watched ${wallet.name}`}, NOW(), NOW())
+      `;
+      
+      // Add to suggested wallets
+      await prisma.$executeRaw`
+        INSERT INTO "SuggestedWallet" (address, name, "riskLevel", "pnlPercent1d", "pnlPercent7d", "pnlPercent30d", "pnlPercent180d", "pnlPercent365d", "openPositionsCount", "consistencyScore", "totalValue", "smartScore") 
+        VALUES (
+          ${wallet.address}, 
+          ${wallet.name}, 
+          ${wallet.riskLevel}, 
+          ${Math.random() * 20 - 10}, 
+          ${Math.random() * 30 - 15}, 
+          ${Math.random() * 50 - 25}, 
+          ${Math.random() * 60 - 30}, 
+          ${Math.random() * 100 - 50}, 
+          ${Math.floor(Math.random() * 10)}, 
+          ${Math.random() * 100}, 
+          ${Math.random() * 1000000},
+          ${Math.random() * 100}
+        )
+      `;
     }
-  ];
-
-  for (const wallet of suggestedWallets) {
-    await prisma.suggestedWallet.upsert({
-      where: { address: wallet.address },
-      update: { 
-        name: wallet.name,
-        riskLevel: wallet.riskLevel,
-        pnlPercent1d: Math.random() * 20 - 10,
-        pnlPercent7d: Math.random() * 30 - 15,
-        pnlPercent30d: Math.random() * 50 - 25,
-        consistencyScore: Math.random() * 100,
-        smartScore: Math.random() * 100,
-        totalValue: Math.random() * 1000000
-      },
-      create: {
-        address: wallet.address,
-        name: wallet.name,
-        riskLevel: wallet.riskLevel,
-        pnlPercent1d: Math.random() * 20 - 10,
-        pnlPercent7d: Math.random() * 30 - 15,
-        pnlPercent30d: Math.random() * 50 - 25,
-        consistencyScore: Math.random() * 100,
-        smartScore: Math.random() * 100,
-        totalValue: Math.random() * 1000000
-      },
-    });
+    
+    console.log(`Seeding finished. ${walletsToSeed.length} wallets have been seeded.`);
+  } catch (error) {
+    console.error('Error during seeding:', error);
+    throw error;
   }
-  console.log('Seeded SuggestedWallet records.');
-
-  // Create some watched wallets for admin user
-  const watchedWallets = [
-    { address: '0xc82b2e484b161d20eae386877d57c4e5807b5581', description: 'Demo wallet' },
-    { address: '0x1111111111111111111111111111111111111111', description: 'Watched A' },
-    { address: '0x2222222222222222222222222222222222222222', description: 'Watched B' }
-  ];
-
-  for (const wallet of watchedWallets) {
-    await prisma.watchedWallet.upsert({
-      where: { 
-        userId_address: {
-          userId: adminUser.id,
-          address: wallet.address
-        }
-      },
-      update: { description: wallet.description },
-      create: {
-        userId: adminUser.id,
-        address: wallet.address,
-        description: wallet.description
-      },
-    });
-  }
-  console.log('Seeded WatchedWallet records.');
-
-  // Optional: Create a demo strategy for admin
-  const demoStrategy = await prisma.strategy.upsert({
-    where: { walletAddress: '0xc82b2e484b161d20eae386877d57c4e5807b5581' },
-    update: {},
-    create: {
-      name: 'Demo Strategy',
-      walletAddress: '0xc82b2e484b161d20eae386877d57c4e5807b5581',
-      okxApiKey: 'encrypted_key_placeholder',
-      okxApiSecret: 'encrypted_secret_placeholder',
-      okxPassphrase: 'encrypted_passphrase_placeholder',
-      positionSize: 1000,
-      leverage: 3,
-      allowedTokens: ['BTC', 'ETH', 'ARB', 'OP'],
-      isActive: false,
-      userId: adminUser.id
-    }
-  });
-  console.log('Demo strategy created.');
-
-  // Create sample trades for the strategy
-  if (demoStrategy) {
-    const now = new Date();
-    await prisma.trade.createMany({
-      data: [
-        { strategyId: demoStrategy.id, action: 'BUY', token: 'ETH', amount: 1200, status: 'Success', createdAt: new Date(now.getTime() - 1000 * 60 * 60) },
-        { strategyId: demoStrategy.id, action: 'SELL', token: 'ARB', amount: 800, status: 'Failed', createdAt: new Date(now.getTime() - 1000 * 60 * 30) },
-      ],
-      skipDuplicates: true
-    });
-    console.log('Sample trades created.');
-  }
-
-  console.log('Seed completed successfully!');
 }
 
 main()
@@ -176,5 +93,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-

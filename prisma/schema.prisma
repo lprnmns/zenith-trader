@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,48 +8,40 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String?
-  role        Role     @default(USER)
-  googleId    String?  @unique
-  googleEmail String?  @unique
-  isActive    Boolean  @default(true)
-  lastLoginAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  Int                      @id @default(autoincrement())
+  email               String                   @unique
+  password            String?
+  role                Role                     @default(USER)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  googleId            String?                  @unique
+  googleEmail         String?
+  isActive            Boolean?                 @default(true)
+  lastLoginAt         DateTime?
   
   // OKX API Credentials
-  okxApiKey    String?
-  okxApiSecret String?
-  okxPassphrase String?
-
-  strategies        Strategy[]
-  watchedWallets   WatchedWallet[]
-  notifications    UserNotification[]
+  okxApiKey           String?
+  okxApiSecret        String?
+  okxPassphrase       String?
+  
+  PushSubscription    PushSubscription[]
+  strategies          Strategy[]
+  notifications       UserNotification[]
+  watchedWallets      WatchedWallet[]
+  subscription        UserSubscription?
   walletNotifications UserWalletNotification[]
-  subscription       UserSubscription?
-  pushSubscriptions PushSubscription[]
-  walletSubscriptions WalletSubscription[]
-  upgradeRequests   UpgradeRequest[]
+  upgradeRequests     UpgradeRequest[]
 
-  @@index([googleId])
-  @@index([googleEmail])
-}
-
-enum Role {
-  ADMIN
-  USER
+  @@index([googleEmail], map: "User_googleEmail_key")
 }
 
 model WatchedWallet {
   id          Int      @id @default(autoincrement())
-  address     String   
+  address     String
   description String?
-  userId      Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
+  userId      Int
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, address])
@@ -63,83 +49,65 @@ model WatchedWallet {
 }
 
 model UserNotification {
-  id           Int      @id @default(autoincrement())
-  userId       Int
+  id            Int      @id @default(autoincrement())
+  userId        Int
   walletAddress String
-  isEnabled    Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isEnabled     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, walletAddress])
   @@index([userId])
 }
 
 model SuggestedWallet {
-  id                  Int      @id @default(autoincrement())
-  address             String   @unique
-  name                String   @default("Unknown")
-  riskLevel           String   @default("Medium")
-  // Timeframe PnL metrics (percent)
-  pnlPercent1d        Float?
-  pnlPercent7d        Float?
-  pnlPercent30d       Float?
-  pnlPercent180d      Float?
-  pnlPercent365d      Float?
-
-  openPositionsCount  Int      @default(0)
-
-  consistencyScore    Float    @default(0)
-  totalValue          Float    @default(0)
-  smartScore          Float?
-  lastAnalyzedAt      DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  address            String   @unique
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  consistencyScore   Float    @default(0)
+  lastAnalyzedAt     DateTime @default(now())
+  name               String   @default("Unknown")
+  riskLevel          String   @default("Medium")
+  smartScore         Float?
+  openPositionsCount Int      @default(0)
+  pnlPercent180d     Float?
+  pnlPercent1d       Float?
+  pnlPercent30d      Float?
+  pnlPercent365d     Float?
+  pnlPercent7d       Float?
+  totalValue         Float    @default(0)
 }
+
 model Strategy {
-  id             Int       @id @default(autoincrement())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  name           String
-  walletAddress  String    @unique
-  
-  // Exchange Configuration
-  exchange       String    @default("OKX") // 'OKX' | 'Binance' | 'Bybit'
-  copyMode       String    @default("Perpetual") // 'Perpetual' | 'Spot'
-  
-  // OKX Specific Fields (nullable for other exchanges)
-  okxApiKey      String?
-  okxApiSecret   String?
-  okxPassphrase  String?
-  
-  // Strategy Settings
-  positionSize   Float     @default(100)
-  leverage       Int       @default(5)
-  allowedTokens  String[]  @default([])
-  
-  // Performance Tracking
-  currentPnL     Float     @default(0)
-  totalPnL       Float     @default(0)
-  tradesCount    Int       @default(0)
-  
-  // Strategy Configuration
-  sizingMethod   String    @default("Fixed Amount") // 'Fixed Amount' | 'Percentage of Wallet\'s Trade'
-  amountPerTrade Float?
+  id               Int      @id @default(autoincrement())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  name             String
+  walletAddress    String   @unique
+  okxApiKey        String
+  okxApiSecret     String
+  okxPassphrase    String
+  positionSize     Float
+  leverage         Int      @default(5)
+  allowedTokens    String[]
+  isActive         Boolean  @default(true)
+  lastChecked      DateTime @default(now())
+  userId           Int
+  exchange         String?  @default("OKX") @db.VarChar(255)
+  copyMode         String?  @default("Perpetual") @db.VarChar(255)
+  marginMode       String?  @default("cross") @db.VarChar(255)
+  currentPnL       Float?   @default(0)
+  totalPnL         Float?   @default(0)
+  tradesCount      Int?     @default(0)
+  sizingMethod     String?  @default("Fixed Amount") @db.VarChar(255)
+  amountPerTrade   Float?
   percentageToCopy Float?
-  stopLoss       Float?
-  dailyLimit     Int?
-  
-  isActive       Boolean   @default(true)
-  lastChecked    DateTime  @default(now())
-
-  userId         Int
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trades         Trade[]
-  executions     StrategyExecution[]
-  walletEvents   WalletEvent[]
-  tradingSignals TradingSignal[]
+  stopLoss         Float?
+  dailyLimit       Int?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades           Trade[]
 
   @@index([userId])
 }
@@ -148,26 +116,23 @@ model Trade {
   id         Int      @id @default(autoincrement())
   createdAt  DateTime @default(now())
   strategyId Int
-  action     String   // 'BUY' | 'SELL'
+  action     String
   token      String
   amount     Float
-  status     String   // 'Success' | 'Failed'
-
+  status     String
   strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
   @@index([strategyId, createdAt(sort: Desc)])
 }
 
-// ============================ YENİ TABLOLAR ============================
-
 model CopyTradingConfig {
-  id              Int      @id @default(autoincrement())
-  okxApiKey       String   // Encrypted
-  okxSecretKey    String   // Encrypted
-  okxPassphrase   String   // Encrypted
-  isActive        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  okxApiKey     String
+  okxSecretKey  String
+  okxPassphrase String
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("copy_trading_configs")
 }
@@ -179,7 +144,6 @@ model UserWalletNotification {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, walletAddress])
@@ -188,17 +152,16 @@ model UserWalletNotification {
 }
 
 model PositionSignal {
-  id            Int      @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   walletAddress String
-  signalType    String   // 'BUY' | 'SELL'
+  signalType    String
   token         String
-  amount        Decimal  @db.Decimal(20, 8)
-  percentage    Decimal  @db.Decimal(10, 4)
-  price         Decimal  @db.Decimal(20, 8)
+  amount        Decimal     @db.Decimal(20, 8)
+  percentage    Decimal     @db.Decimal(10, 4)
+  price         Decimal     @db.Decimal(20, 8)
   timestamp     DateTime
-  processed     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-
+  processed     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
   copyTrades    CopyTrade[]
 
   @@index([walletAddress, timestamp])
@@ -207,14 +170,13 @@ model PositionSignal {
 }
 
 model CopyTrade {
-  id            Int      @id @default(autoincrement())
-  signalId      Int
-  okxOrderId    String?
-  status        String   // 'PENDING' | 'SUCCESS' | 'FAILED'
-  executedAt    DateTime?
-  createdAt     DateTime @default(now())
-
-  signal        PositionSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  id         Int            @id @default(autoincrement())
+  signalId   Int
+  okxOrderId String?
+  status     String
+  executedAt DateTime?
+  createdAt  DateTime       @default(now())
+  signal     PositionSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
 
   @@index([signalId])
   @@index([status])
@@ -229,186 +191,44 @@ model UserSubscription {
   auth      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_subscriptions")
 }
 
-// ============================ STRATEGY EXECUTION ============================
-
-model StrategyExecution {
-  id              Int      @id @default(autoincrement())
-  strategyId      Int
-  executionType   String   // 'SIGNAL_RECEIVED' | 'TRADE_EXECUTED' | 'ERROR_OCCURRED' | 'POSITION_CLOSED'
-  status          String   // 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED'
-  
-  // Signal Information
-  signalType      String?  // 'BUY' | 'SELL'
-  token           String?
-  amount          Decimal? @db.Decimal(20, 8)
-  price           Decimal? @db.Decimal(20, 8)
-  
-  // Execution Details
-  exchangeOrderId String?
-  executedPrice   Decimal? @db.Decimal(20, 8)
-  executedAmount  Decimal? @db.Decimal(20, 8)
-  fee             Decimal? @db.Decimal(20, 8)
-  
-  // Error Handling
-  errorCode       String?
-  errorMessage    String?
-  
-  // Performance Metrics
-  pnl             Decimal? @db.Decimal(20, 8)
-  executionTime   Int?     // Execution time in milliseconds
-  
-  timestamp       DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  strategy        Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
-
-  @@index([strategyId, timestamp(sort: Desc)])
-  @@index([executionType, status])
-  @@index([token, timestamp])
-  @@map("strategy_executions")
-}
-
-// ============================ AUDIT LOG ============================
-
-model AuditLog {
-  id              Int      @id @default(autoincrement())
-  
-  // Entity Information
-  entityType      String   // 'Strategy' | 'User' | 'Trade' | 'Configuration'
-  entityId        Int
-  
-  // Action Information
-  action          String   // 'CREATE' | 'UPDATE' | 'DELETE' | 'EXECUTE' | 'LOGIN' | 'LOGOUT'
-  
-  // User Context
-  userId          Int?
-  userRole        String?
-  
-  // Change Details
-  oldValues       Json?
-  newValues       Json?
-  
-  // Metadata
-  ipAddress       String?
-  userAgent       String?
-  sessionId       String?
-  
-  // Status
-  status          String   // 'SUCCESS' | 'FAILED' | 'WARNING'
-  
-  // Additional Context
-  description     String?
-  metadata        Json?
-  
-  timestamp       DateTime @default(now())
-  createdAt       DateTime @default(now())
-
-  @@index([entityType, entityId, timestamp(sort: Desc)])
-  @@index([userId, action, timestamp])
-  @@index([status, timestamp])
-  @@map("audit_logs")
-}
-
-model WalletEvent {
-  id          Int      @id @default(autoincrement())
-  walletAddress String
-  eventType   String   // 'TRANSACTION' | 'POSITION_CHANGE' | 'UNKNOWN'
-  eventData   Json     // Raw event data from Zerion
-  timestamp   DateTime @default(now())
-  processed   Boolean  @default(false)
-  error       String?
-  strategyId  Int
-  createdAt   DateTime @default(now())
-
-  strategy       Strategy       @relation(fields: [strategyId], references: [id], onDelete: Cascade)
-  tradingSignals TradingSignal[]
-
-  @@index([walletAddress, timestamp])
-  @@index([strategyId, timestamp])
-  @@index([processed, timestamp])
-  @@map("wallet_events")
-}
-
-model TradingSignal {
-  id          Int      @id @default(autoincrement())
-  walletEventId Int?
-  strategyId  Int
-  signalType  String   // 'BUY' | 'SELL'
-  token       String
-  amount      Float
-  price       Float
-  confidence  Float?
-  metadata    Json?
-  status      String   @default("PENDING") // 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  walletEvent WalletEvent? @relation(fields: [walletEventId], references: [id], onDelete: SetNull)
-  strategy    Strategy    @relation(fields: [strategyId], references: [id], onDelete: Cascade)
-
-  @@index([strategyId, status, createdAt])
-  @@index([token, signalType, createdAt])
-  @@index([walletEventId])
-  @@map("trading_signals")
-}
-
 model PushSubscription {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  endpoint    String   @unique
-  p256dh      String
-  auth        String
-  keys        Json
-  userAgent   String?
-  isActive    Boolean  @default(true)
-  lastUsed    DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  endpoint  String    @unique @db.VarChar(1000)
+  p256dh    String    @db.VarChar(255)
+  auth      String    @db.VarChar(255)
+  keys      Json?
+  userAgent String?
+  isActive  Boolean?  @default(true)
+  lastUsed  DateTime? @db.Timestamp(6)
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
   @@index([isActive])
-  @@map("push_subscriptions")
+  @@index([userId])
 }
 
-model WalletSubscription {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  walletAddress String
-  subscription  String
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, walletAddress])
-  @@index([walletAddress])
-  @@map("wallet_subscriptions")
+enum Role {
+  ADMIN
+  USER
 }
 
 model UpgradeRequest {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  email         String
-  contactInfo   String?
-  message       String?
-  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  adminNotes    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  email       String
+  contactInfo String?
+  message     String?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, status])
-  @@index([status, createdAt])
-  @@map("upgrade_requests")
+  @@index([userId, createdAt])
 }
