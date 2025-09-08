@@ -13,8 +13,13 @@ class PWAManager {
   
   async init() {
     try {
-      // Temporarily disable service worker registration due to errors
-      console.log('[PWA] Service Worker registration temporarily disabled');
+      // Register service worker
+      console.log('[PWA] Registering service worker...');
+      this.registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('[PWA] Service Worker registered:', this.registration);
+      
+      // Set up message listener
+      this.setupMessageListener();
       
       // Set up online/offline event listeners
       this.setupConnectivityListeners();
@@ -22,8 +27,9 @@ class PWAManager {
       // Set up IndexedDB for offline storage
       await this.setupIndexedDB();
       
-      // Request notification permission
-      await this.requestNotificationPermission();
+      // Don't request notification permission automatically
+      // Let NotificationBell component handle it
+      console.log('[PWA] Notification permission will be requested on demand');
       
     } catch (error) {
       console.error('[PWA] PWA initialization failed:', error);

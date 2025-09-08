@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, BellOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../stores/authStore';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface NotificationBellProps {
   walletAddress: string;
@@ -21,19 +21,23 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
     if (!user) return;
     
     try {
-      const response = await fetch('/api/notifications/check', {
+      const token = localStorage.getItem('token');
+      console.log('[NotificationBell] Checking subscription for:', walletAddress);
+      
+      const response = await fetch('http://localhost:3001/api/notifications/check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ walletAddress })
       });
       
       const data = await response.json();
+      console.log('[NotificationBell] Subscription status:', data);
       setIsSubscribed(data.isSubscribed);
     } catch (error) {
-      console.error('Failed to check subscription:', error);
+      console.error('[NotificationBell] Failed to check subscription:', error);
     }
   };
 
@@ -58,11 +62,14 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
 
   const subscribeToPush = async () => {
     try {
+      console.log('[NotificationBell] Getting service worker registration...');
       const registration = await navigator.serviceWorker.ready;
       
       // Get VAPID public key from server
-      const response = await fetch('/api/notifications/vapid-key');
+      console.log('[NotificationBell] Fetching VAPID key...');
+      const response = await fetch('http://localhost:3001/api/notifications/vapid-key');
       const { publicKey } = await response.json();
+      console.log('[NotificationBell] VAPID public key received:', publicKey ? 'Yes' : 'No');
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -77,6 +84,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
   };
 
   const toggleNotification = async () => {
+    console.log('[NotificationBell] Toggle clicked, current state:', { isSubscribed, user, walletAddress });
+    
     if (!user) {
       toast.error('Please login to enable notifications');
       return;
@@ -97,7 +106,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
         const subscription = await subscribeToPush();
 
         // Save subscription to server
-        const response = await fetch('/api/notifications/subscribe', {
+        console.log('[NotificationBell] Saving subscription to server...');
+        const response = await fetch('http://localhost:3001/api/notifications/subscribe', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -124,7 +134,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
         }
       } else {
         // Unsubscribe
-        const response = await fetch('/api/notifications/unsubscribe', {
+        console.log('[NotificationBell] Unsubscribing...');
+        const response = await fetch('http://localhost:3001/api/notifications/unsubscribe', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
