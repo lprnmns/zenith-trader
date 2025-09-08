@@ -19,44 +19,44 @@ import '@/styles/strategy-wizard.css';
 const wizardSteps = [
   {
     id: 1,
-    title: 'Temel Bilgiler',
-    description: 'Strateji adı ve cüzdan adresi',
+    title: 'Basic Info',
+    description: 'Strategy name and wallet address',
     fields: ['name', 'walletAddress']
   },
   {
     id: 2,
-    title: 'Borsa Seçimi',
-    description: 'İşlem yapılacak borsayı seçin',
+    title: 'Exchange Selection',
+    description: 'Select the exchange for trading',
     fields: ['exchange', 'copyMode']
   },
   {
     id: 3,
-    title: 'Futures Ayarları',
-    description: 'Kaldıraç ve marj modu',
+    title: 'Futures Settings',
+    description: 'Leverage and margin mode',
     fields: ['leverage', 'marginMode']
   },
   {
     id: 4,
-    title: 'Pozisyon Boyutu',
-    description: 'İşlem büyüklüğü ayarları',
+    title: 'Position Sizing',
+    description: 'Trade size settings',
     fields: ['sizingMethod', 'positionSize', 'amountPerTrade', 'percentageToCopy']
   },
   {
     id: 5,
-    title: 'Risk Yönetimi',
-    description: 'Stop loss ve günlük limit',
+    title: 'Risk Management',
+    description: 'Stop loss and daily limit',
     fields: ['stopLoss', 'dailyLimit']
   },
   {
     id: 6,
-    title: 'Sembol Filtreleri',
-    description: 'İşlem yapılacak tokenlar',
+    title: 'Symbol Filters',
+    description: 'Tokens to trade',
     fields: ['allowedTokens', 'minTradeSize', 'maxTradeSize']
   },
   {
     id: 7,
-    title: 'Çalıştırma Ayarları',
-    description: 'İşlem yürütme parametreleri',
+    title: 'Execution Settings',
+    description: 'Trade execution parameters',
     fields: ['executionDelay', 'maxSlippage', 'retryAttempts', 'enablePartialFills']
   }
 ];
@@ -164,10 +164,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
       if (result.success) {
         setCredentialsInfo(result.credentials);
       } else {
-        setCredentialsError(result.error || 'Kimlik bilgileri alınamadı');
+        setCredentialsError(result.error || 'Failed to retrieve credentials');
       }
     } catch (error) {
-      setCredentialsError('Bir hata oluştu');
+      setCredentialsError('An error occurred');
     } finally {
       setIsLoadingCredentials(false);
     }
@@ -295,15 +295,15 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">Strateji Bilgileri</h3>
-              <p className="text-sm text-gray-400">Kopya ticaret stratejiniz için temel bilgileri girin</p>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Strategy Information</h3>
+              <p className="text-sm text-gray-400">Enter the basic information for your copy trading strategy</p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Strateji Adı</label>
+              <label className="block text-sm font-medium text-gray-300">Strategy Name</label>
               <input
                 type="text"
-                placeholder="Örnek: BTC Takip Stratejisi"
+                placeholder="Example: BTC Tracking Strategy"
                 {...methods.register('name')}
                 className="w-full px-4 py-3 text-lg rounded-lg outline-none transition-all"
                 style={{
@@ -326,7 +326,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
             
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Cüzdan Adresi</label>
+              <label className="block text-sm font-medium text-gray-300">Wallet Address</label>
               <input
                 type="text"
                 placeholder="0x..."
@@ -357,22 +357,22 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">Borsa Ayarları</h3>
-              <p className="text-sm text-gray-400">İşlem yapacağınız borsayı ve kopyalama modunu seçin</p>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Exchange Settings</h3>
+              <p className="text-sm text-gray-400">Select the exchange and copy mode for trading</p>
             </div>
 
             {/* OKX Credentials Auto-fill */}
             {watchedValues.exchange === 'OKX' && (
               <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-emerald-400">OKX Kimlik Bilgileri</h3>
+                  <h3 className="text-lg font-medium text-emerald-400">OKX Credentials</h3>
                   <ModernButton
                     variant="primary"
                     size="sm"
                     onClick={handleAutoFillOKXCredentials}
                     loading={isLoadingCredentials}
                   >
-                    {isLoadingCredentials ? 'Yükleniyor...' : 'Kimlik Bilgilerini Getir'}
+                    {isLoadingCredentials ? 'Loading...' : 'Get Credentials'}
                   </ModernButton>
                 </div>
                 
@@ -385,7 +385,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 {credentialsInfo && (!credentialsInfo.okxApiKey || !credentialsInfo.okxApiSecret || !credentialsInfo.okxPassphrase) && (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
                     <p className="text-sm text-amber-400">
-                      ⚠️ Profilinizde kayıtlı OKX kimlik bilgileri bulunamadı. Lütfen profil ayarlarınızdan OKX API bilgilerinizi ekleyin veya aşağıdaki alanlara manuel olarak girin.
+                      ⚠️ No OKX credentials found in your profile. Please add your OKX API information from your profile settings or enter them manually in the fields below.
                     </p>
                   </div>
                 )}
@@ -395,19 +395,19 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-blue-400">API Key:</span>
                       <span className="text-sm font-mono text-emerald-400">
-                        {credentialsInfo.okxApiKey ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                        {credentialsInfo.okxApiKey ? '•••••••••••••••••••••••••' : 'Not registered'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-blue-400">API Secret:</span>
                       <span className="text-sm font-mono text-emerald-400">
-                        {credentialsInfo.okxApiSecret ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                        {credentialsInfo.okxApiSecret ? '•••••••••••••••••••••••••' : 'Not registered'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-blue-400">Passphrase:</span>
                       <span className="text-sm font-mono text-emerald-400">
-                        {credentialsInfo.okxPassphrase ? '•••••••••••••••••••••••••' : 'Kayıtlı değil'}
+                        {credentialsInfo.okxPassphrase ? '•••••••••••••••••••••••••' : 'Not registered'}
                       </span>
                     </div>
                     
@@ -419,10 +419,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                           size="sm"
                           onClick={handleUseCredentials}
                         >
-                          Bu Bilgileri Kullan
+                          Use These Credentials
                         </ModernButton>
                         <span className="text-xs text-gray-400">
-                          Kayıtlı OKX kimlik bilgileri stratejiye eklenecektir
+                          Registered OKX credentials will be added to the strategy
                         </span>
                       </div>
                     )}
@@ -432,7 +432,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             )}
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Borsa Seçimi</label>
+              <label className="block text-sm font-medium text-gray-300">Exchange Selection</label>
               <select
                 value={watchedValues.exchange}
                 onChange={(e) => setValue('exchange', e.target.value)}
@@ -461,7 +461,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Kopyalama Modu</label>
+              <label className="block text-sm font-medium text-gray-300">Copy Mode</label>
               <select
                 value={watchedValues.copyMode}
                 onChange={(e) => setValue('copyMode', e.target.value)}
@@ -480,7 +480,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   e.target.style.backgroundColor = 'rgba(71, 85, 105, 0.5)';
                 }}
               >
-                <option value="Perpetual">Perpetual (Sürekli)</option>
+                <option value="Perpetual">Perpetual (Continuous)</option>
                 <option value="Spot">Spot</option>
               </select>
               {errors.copyMode && (
@@ -491,7 +491,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             {/* OKX Credentials Input Fields */}
             {watchedValues.exchange === 'OKX' && (
               <div className="space-y-4 mt-4 p-4 border border-emerald-400/20 bg-emerald-400/5 rounded-lg">
-                <h4 className="text-sm font-medium text-emerald-400 mb-3">OKX API Bilgileri</h4>
+                <h4 className="text-sm font-medium text-emerald-400 mb-3">OKX API Information</h4>
                 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-300">API Key</label>
@@ -507,7 +507,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                       border: '2px solid rgba(156, 163, 175, 0.3)'
                     }}
                   />
-                  <p className="text-xs text-gray-400">OKX hesabınızdan aldığınız API Key</p>
+                  <p className="text-xs text-gray-400">API Key from your OKX account</p>
                   {errors.apiKey && (
                     <p className="text-red-400 text-sm">{errors.apiKey.message}</p>
                   )}
@@ -527,7 +527,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                       border: '2px solid rgba(156, 163, 175, 0.3)'
                     }}
                   />
-                  <p className="text-xs text-gray-400">OKX hesabınızdan aldığınız API Secret</p>
+                  <p className="text-xs text-gray-400">API Secret from your OKX account</p>
                   {errors.apiSecret && (
                     <p className="text-red-400 text-sm">{errors.apiSecret.message}</p>
                   )}
@@ -547,7 +547,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                       border: '2px solid rgba(156, 163, 175, 0.3)'
                     }}
                   />
-                  <p className="text-xs text-gray-400">API oluştururken belirlediğiniz passphrase</p>
+                  <p className="text-xs text-gray-400">Passphrase you set when creating the API</p>
                   {errors.passphrase && (
                     <p className="text-red-400 text-sm">{errors.passphrase.message}</p>
                   )}
@@ -561,17 +561,17 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">Futures Ayarları</h3>
-              <p className="text-sm text-gray-400">Kaldıraç ve marj modunu ayarlayın</p>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2">Futures Settings</h3>
+              <p className="text-sm text-gray-400">Configure leverage and margin mode</p>
             </div>
 
             <div className="border border-gray-600 rounded-xl p-6" style={{ backgroundColor: 'rgba(71, 85, 105, 0.3)' }}>
               <div className="flex items-center justify-between mb-4">
                 <label className="text-lg font-medium text-gray-200">
-                  Kaldıraç: <span className="text-orange-400">{watchedValues.leverage}x</span>
+                  Leverage: <span className="text-orange-400">{watchedValues.leverage}x</span>
                 </label>
                 <div className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-medium">
-                  {watchedValues.leverage > 20 ? 'Yüksek Risk' : watchedValues.leverage > 10 ? 'Orta Risk' : 'Düşük Risk'}
+                  {watchedValues.leverage > 20 ? 'High Risk' : watchedValues.leverage > 10 ? 'Medium Risk' : 'Low Risk'}
                 </div>
               </div>
               
@@ -592,13 +592,13 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               
               <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <p className="text-xs text-orange-400">
-                  ⚠️ Yüksek kaldıraç risk ve potansiyel getirileri artırır. Lütfen dikkatli olun.
+                  ⚠️ High leverage increases risk and potential returns. Please be careful.
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Marj Modu</label>
+              <label className="block text-sm font-medium text-gray-300">Margin Mode</label>
               <select
                 value={watchedValues.marginMode}
                 onChange={(e) => setValue('marginMode', e.target.value)}
@@ -609,8 +609,8 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   border: '2px solid rgba(156, 163, 175, 0.3)'
                 }}
               >
-                <option value="cross">Cross (Çapraz)</option>
-                <option value="isolated">Isolated (İzole)</option>
+                <option value="cross">Cross (Cross)</option>
+                <option value="isolated">Isolated (Isolated)</option>
               </select>
               {errors.marginMode && (
                 <p className="text-red-400 text-sm mt-1">{errors.marginMode.message}</p>
@@ -645,7 +645,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
 
             {watchedValues.sizingMethod === 'Fixed Amount' ? (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">İşlem Başına Tutar (USD)</label>
+                <label className="block text-sm font-medium text-gray-300">Amount Per Trade (USD)</label>
                 <input
                   type="number"
                   placeholder="100"
@@ -658,7 +658,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     border: '2px solid rgba(156, 163, 175, 0.3)'
                   }}
                 />
-                <p className="text-xs text-gray-400">Her bir işlem için kullanılacak USD tutarı</p>
+                <p className="text-xs text-gray-400">USD amount to use for each trade</p>
                 {errors.amountPerTrade && (
                   <p className="text-red-400 text-sm">{errors.amountPerTrade.message}</p>
                 )}
@@ -697,14 +697,14 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   border: '2px solid rgba(156, 163, 175, 0.3)'
                 }}
               />
-              <p className="text-xs text-gray-400">Bu kayıp yüzdesinde pozisyon otomatik kapanır</p>
+              <p className="text-xs text-gray-400">Position will automatically close at this loss percentage</p>
               {errors.stopLoss && (
                 <p className="text-red-400 text-sm">{errors.stopLoss.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Günlük İşlem Limiti</label>
+              <label className="block text-sm font-medium text-gray-300">Daily Trade Limit</label>
               <input
                 type="number"
                 placeholder="10"
@@ -717,7 +717,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   border: '2px solid rgba(156, 163, 175, 0.3)'
                 }}
               />
-              <p className="text-xs text-gray-400">Günlük maksimum işlem sayısı</p>
+              <p className="text-xs text-gray-400">Maximum number of trades per day</p>
               {errors.dailyLimit && (
                 <p className="text-red-400 text-sm">{errors.dailyLimit.message}</p>
               )}
@@ -753,7 +753,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Min İşlem Boyutu (USD)</label>
+                <label className="block text-sm font-medium text-gray-300">Min Trade Size (USD)</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -766,11 +766,11 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     border: '2px solid rgba(156, 163, 175, 0.3)'
                   }}
                 />
-                <p className="text-xs text-gray-400">Minimum işlem tutarı</p>
+                <p className="text-xs text-gray-400">Minimum trade amount</p>
               </div>
               
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Max İşlem Boyutu (USD)</label>
+                <label className="block text-sm font-medium text-gray-300">Max Trade Size (USD)</label>
                 <input
                   type="number"
                   placeholder="1000"
@@ -783,7 +783,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     border: '2px solid rgba(156, 163, 175, 0.3)'
                   }}
                 />
-                <p className="text-xs text-gray-400">Maksimum işlem tutarı</p>
+                <p className="text-xs text-gray-400">Maximum trade amount</p>
               </div>
             </div>
           </div>
@@ -793,7 +793,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">İşlem Gecikmesi (saniye)</label>
+              <label className="block text-sm font-medium text-gray-300">Execution Delay (seconds)</label>
               <input
                 type="number"
                 placeholder="0"
@@ -807,7 +807,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   border: '2px solid rgba(156, 163, 175, 0.3)'
                 }}
               />
-              <p className="text-xs text-gray-400">İşlemleri yürütmeden önceki bekleme süresi (0 anında)</p>
+              <p className="text-xs text-gray-400">Waiting time before executing trades (0 for instant)</p>
             </div>
 
             <div>
@@ -828,7 +828,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Yeniden Deneme Sayısı</label>
+              <label className="block text-sm font-medium text-gray-300">Retry Attempts</label>
               <input
                 type="number"
                 placeholder="3"
@@ -842,7 +842,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                   border: '2px solid rgba(156, 163, 175, 0.3)'
                 }}
               />
-              <p className="text-xs text-gray-400">Başarısız işlemler için yeniden deneme sayısı</p>
+              <p className="text-xs text-gray-400">Number of retries for failed trades</p>
             </div>
 
             <div className="space-y-3">
@@ -900,8 +900,8 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-bold text-gray-200 mb-2">Strateji Özeti</h3>
-              <p className="text-gray-400">Lütfen strateji ayarlarınızı kontrol edin</p>
+              <h3 className="text-xl font-bold text-gray-200 mb-2">Strategy Summary</h3>
+              <p className="text-gray-400">Please review your strategy settings</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -909,16 +909,16 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <Info className="w-4 h-4" />
-                    Temel Bilgiler
+                    Basic Info
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Adı:</span>
+                    <span className="text-gray-400">Name:</span>
                     <span className="font-medium text-gray-200">{watchedValues.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Cüzdan:</span>
+                    <span className="text-gray-400">Wallet:</span>
                     <span className="font-mono text-xs text-gray-200">
                       {watchedValues.walletAddress?.slice(0, 6)}...{watchedValues.walletAddress?.slice(-4)}
                     </span>
@@ -930,7 +930,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <ExternalLink className="w-4 h-4" />
-                    Borsa Ayarları
+                    Exchange Settings
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -939,7 +939,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     <span className="font-medium text-gray-200">{watchedValues.exchange}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Mod:</span>
+                    <span className="text-gray-400">Mode:</span>
                     <span className="font-medium text-gray-200">{watchedValues.copyMode}</span>
                   </div>
                 </CardContent>
@@ -949,17 +949,17 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
-                    Futures Ayarları
+                    Futures Settings
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Kaldıraç:</span>
+                    <span className="text-gray-400">Leverage:</span>
                     <span className="font-medium text-gray-200">{watchedValues.leverage}x</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Marj:</span>
-                    <span className="font-medium text-gray-200">{watchedValues.marginMode === 'cross' ? 'Cross (Çapraz)' : 'Isolated (İzole)'}</span>
+                    <span className="text-gray-400">Margin:</span>
+                    <span className="font-medium text-gray-200">{watchedValues.marginMode === 'cross' ? 'Cross (Cross)' : 'Isolated (Isolated)'}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -968,17 +968,17 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-2">
                     <Shield className="w-4 h-4" />
-                    Risk Yönetimi
+                    Risk Management
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Stop Loss:</span>
-                    <span className="font-medium text-gray-200">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'Yok'}</span>
+                    <span className="font-medium text-gray-200">{watchedValues.stopLoss ? `${watchedValues.stopLoss}%` : 'None'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Günlük Limit:</span>
-                    <span className="font-medium text-gray-200">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'Yok'}</span>
+                    <span className="text-gray-400">Daily Limit:</span>
+                    <span className="font-medium text-gray-200">{watchedValues.dailyLimit ? `$${watchedValues.dailyLimit}` : 'None'}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -988,10 +988,10 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-gray-200">Strateji Hazır!</h4>
+                  <h4 className="font-medium text-gray-200">Strategy Ready!</h4>
                   <p className="text-sm text-gray-400 mt-1">
-                    Strateji oluşturulduktan sonra belirtilen cüzdan adresini izlemeye başlayacaktır.
-                    Tüm ayarları dikkatlice kontrol edin.
+                    The strategy will start monitoring the specified wallet address after creation.
+                    Please carefully review all settings.
                   </p>
                 </div>
               </div>
@@ -1029,7 +1029,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                       }}
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      Geri
+                      Back
                     </button>
                   )}
                   
@@ -1044,7 +1044,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                         border: '2px solid rgba(156, 163, 175, 0.3)'
                       }}
                     >
-                      Taslağı Yükle
+                      Load Draft
                     </button>
                   )}
                   
@@ -1059,7 +1059,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                     }}
                   >
                     <Save className="w-4 h-4" />
-                    Taslağı Kaydet
+                    Save Draft
                     {draftSaved && <span className="ml-1 text-emerald-400">✓</span>}
                   </button>
                 </div>
@@ -1076,7 +1076,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                         border: 'none'
                       }}
                     >
-                      İleri
+                      Next
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   ) : (
@@ -1090,7 +1090,7 @@ const StrategyWizard: React.FC<StrategyWizardProps> = ({
                         border: 'none'
                       }}
                     >
-                      {isSubmitting ? 'Oluşturuluyor...' : 'Strateji Oluştur'}
+                      {isSubmitting ? 'Creating...' : 'Create Strategy'}
                     </button>
                   )}
                 </div>

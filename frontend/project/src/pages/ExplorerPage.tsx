@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,11 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSuggestedWallets, getWalletAnalysis } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthStore } from '@/stores/authStore';
 
 export function ExplorerPage() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [walletAddress, setWalletAddress] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
@@ -115,6 +119,18 @@ export function ExplorerPage() {
       setCopied(addr);
       setTimeout(() => setCopied(null), 1200);
     } catch {}
+  };
+
+  const handleCopyWallet = () => {
+    if (!walletAddress) return;
+    
+    if (user?.role === 'ADMIN') {
+      // Navigate to strategies page with pre-filled wallet address
+      navigate('/strategies?open=true&wallet=' + encodeURIComponent(walletAddress));
+    } else {
+      // Navigate to strategies page (will show locked interface)
+      navigate('/strategies');
+    }
   };
 
   const filteredAndSorted = useMemo(() => {
@@ -350,11 +366,23 @@ export function ExplorerPage() {
                   <CardTitle className="text-white">Portfolio Value (Realized + Unrealized)</CardTitle>
                   <NotificationBell walletAddress={walletAddress} />
                 </div>
-                {performanceData.length > 0 && (
-                  <span className="text-sm text-slate-400">
-                    {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  {walletAddress && (
+                    <Button
+                      onClick={handleCopyWallet}
+                      size="sm"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                  )}
+                  {performanceData.length > 0 && (
+                    <span className="text-sm text-slate-400">
+                      {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
+                    </span>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>

@@ -30,9 +30,17 @@ async function getNewPositionSignals(address, sinceDate) {
 
     console.log(`[PositionSignal] ${address} toplam değeri: $${totalValue.toFixed(2)}`);
 
+    // Filter trades by date - only get trades after sinceDate or server start time
+    const serverStartTime = sinceDate || new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago if no sinceDate
+    const currentHistory = currentAnalysis.tradeHistory.filter(trade => {
+      const tradeDate = new Date(trade.date);
+      return tradeDate >= serverStartTime;
+    });
+
+    console.log(`[PositionSignal] ${address} için ${currentAnalysis.tradeHistory.length} işlemden ${currentHistory.length} tanesi son ${sinceDate ? 'kontrol tarihinden' : 'sunucu başlangıcından'} sonra`);
+
     // Get previous trade history from cache
     const previousHistory = tradeHistoryCache.get(address) || [];
-    const currentHistory = currentAnalysis.tradeHistory || [];
 
     // Find new trades by comparing current vs previous
     const newSignals = [];

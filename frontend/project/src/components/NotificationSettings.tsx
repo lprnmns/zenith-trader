@@ -47,8 +47,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         if (success) {
           setIsEnabled(true);
           setPermission('granted');
-          toast.success('Bildirimler başarıyla etkinleştirildi!', {
-            description: 'Artık trade bildirimlerini alacaksınız.'
+          toast.success('Notifications enabled successfully!', {
+            description: 'You will now receive trade notifications.'
           });
         } else {
           throw new Error('Subscription failed');
@@ -58,8 +58,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         const success = await notificationService.unsubscribe();
         if (success) {
           setIsEnabled(false);
-          toast.info('Bildirimler devre dışı bırakıldı', {
-            description: 'Artık trade bildirimleri almayacaksınız.'
+          toast.info('Notifications disabled', {
+            description: 'You will no longer receive trade notifications.'
           });
         } else {
           throw new Error('Unsubscription failed');
@@ -67,8 +67,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       }
     } catch (error) {
       console.error('Notification toggle failed:', error);
-      toast.error('Bildirim ayarları güncellenemedi', {
-        description: 'Lütfen tekrar deneyin veya tarayıcı ayarlarınızı kontrol edin.'
+      toast.error('Could not update notification settings', {
+        description: 'Please try again or check your browser settings.'
       });
     } finally {
       setIsLoading(false);
@@ -80,8 +80,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     if (!isSupported) {
       return {
         icon: <BellOff className="h-5 w-5 text-gray-400" />,
-        title: 'Bildirimler Desteklenmiyor',
-        description: 'Tarayıcınız push bildirimleri desteklemiyor.',
+        title: 'Notifications Not Supported',
+        description: 'Your browser does not support push notifications.',
         color: 'text-gray-600'
       };
     }
@@ -89,8 +89,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     if (permission === 'denied') {
       return {
         icon: <BellOff className="h-5 w-5 text-red-500" />,
-        title: 'Bildirimler Engellendi',
-        description: 'Tarayıcı ayarlarından bildirimlere izin vermeniz gerekiyor.',
+        title: 'Notifications Blocked',
+        description: 'You need to allow notifications in your browser settings.',
         color: 'text-red-600'
       };
     }
@@ -98,16 +98,16 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     if (isEnabled) {
       return {
         icon: <Bell className="h-5 w-5 text-green-500" />,
-        title: 'Bildirimler Etkin',
-        description: 'Trade bildirimlerini alacaksınız.',
+        title: 'Notifications Active',
+        description: 'You will receive trade notifications.',
         color: 'text-green-600'
       };
     }
 
     return {
       icon: <BellOff className="h-5 w-5 text-yellow-500" />,
-      title: 'Bildirimler Devre Dışı',
-      description: 'Trade bildirimlerini almayacaksınız.',
+      title: 'Notifications Disabled',
+      description: 'You will not receive trade notifications.',
       color: 'text-yellow-600'
     };
   };
@@ -119,10 +119,10 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       <CardHeader>
         <div className="flex items-center space-x-2">
           <Smartphone className="h-5 w-5" />
-          <CardTitle>Push Bildirimler</CardTitle>
+          <CardTitle>Push Notifications</CardTitle>
         </div>
         <CardDescription>
-          Trade işlemleriniz için anında bildirim alın
+          Get instant notifications for your trade operations
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -147,13 +147,13 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         {permission === 'denied' && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3">
             <div className="text-sm text-red-800">
-              <strong>Bildirim izni gerekli:</strong>
+              <strong>Notification permission required:</strong>
               <br />
-              1. Tarayıcınızın adres çubuğundaki kilit simgesine tıklayın
+              1. Click the lock icon in your browser's address bar
               <br />
-              2. "Bildirimler" ayarını "İzin ver" olarak değiştirin
+              2. Change "Notifications" setting to "Allow"
               <br />
-              3. Sayfayı yenileyin
+              3. Refresh the page
             </div>
           </div>
         )}
@@ -161,13 +161,13 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         {isEnabled && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
             <div className="text-sm text-blue-800">
-              <strong>Bildirim türleri:</strong>
+              <strong>Notification types:</strong>
               <br />
-              🟢 Pozisyon açılması
+              🟢 Position opened
               <br />
-              🟡 Kısmi pozisyon kapanması
+              🟡 Partial position closed
               <br />
-              🔴 Pozisyon tamamen kapanması
+              🔴 Position fully closed
             </div>
           </div>
         )}
@@ -175,8 +175,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         {!isSupported && (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
             <div className="text-sm text-gray-600">
-              Push bildirimler için modern bir tarayıcı gereklidir.
-              Chrome, Firefox, Safari veya Edge kullanmayı deneyin.
+              A modern browser is required for push notifications.
+              Try using Chrome, Firefox, Safari, or Edge.
             </div>
           </div>
         )}

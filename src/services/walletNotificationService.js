@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const webpush = require('web-push');
+
 const prisma = new PrismaClient();
 
 // Configure web-push
@@ -15,7 +16,30 @@ class WalletNotificationService {
      */
     async subscribeToWallet(userId, walletAddress, subscription) {
         try {
-            // Store subscription in database
+            console.log('[WalletNotification] Subscribing user', userId, 'to wallet', walletAddress);
+            
+            // Check if subscription already exists
+            const existingSubscription = await prisma.walletSubscription.findFirst({
+                where: {
+                    userId,
+                    walletAddress
+                }
+            });
+            
+            if (existingSubscription) {
+                // Update existing subscription
+                const walletSub = await prisma.walletSubscription.update({
+                    where: { id: existingSubscription.id },
+                    data: {
+                        subscription: JSON.stringify(subscription),
+                        isActive: true
+                    }
+                });
+                console.log('[WalletNotification] Subscription updated with ID:', walletSub.id);
+                return walletSub;
+            }
+            
+            // Create new subscription
             const walletSub = await prisma.walletSubscription.create({
                 data: {
                     userId,
@@ -25,16 +49,19 @@ class WalletNotificationService {
                 }
             });
             
-            console.log(`[WalletNotification] User ${userId} subscribed to wallet ${walletAddress}`);
+            console.log('[WalletNotification] Subscription created with ID:', walletSub.id);
             
-            // Send welcome notification
-            await this.sendNotification(subscription, {
-                title: '🔔 Wallet Tracking Active',
-                body: `You will receive notifications for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
-                icon: '/pwa-192x192.png',
-                badge: '/pwa-96x96.svg',
-                data: { walletAddress }
-            });
+            // Send welcome notification only for push subscriptions (not browser fallbacks)
+            const subObj = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
+            if (subObj.endpoint !== 'browser-notification') {
+                await this.sendNotification(subscription, {
+                    title: '🔔 Wallet Tracking Active',
+                    body: `You will receive notifications for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+                    icon: '/pwa-192x192.png',
+                    badge: '/pwa-96x96.svg',
+                    data: { walletAddress }
+                });
+            }
             
             return walletSub;
         } catch (error) {
@@ -48,6 +75,8 @@ class WalletNotificationService {
      */
     async unsubscribeFromWallet(userId, walletAddress) {
         try {
+            console.log('[WalletNotification] Unsubscribing user', userId, 'from wallet', walletAddress);
+            
             await prisma.walletSubscription.updateMany({
                 where: {
                     userId,
@@ -58,10 +87,55 @@ class WalletNotificationService {
                 }
             });
             
-            console.log(`[WalletNotification] User ${userId} unsubscribed from wallet ${walletAddress}`);
+            console.log('[WalletNotification] Unsubscribed successfully');
             return true;
         } catch (error) {
             console.error('[WalletNotification] Unsubscribe error:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Check if user is subscribed to a wallet
+     */
+    async isSubscribedToWallet(userId, walletAddress) {
+        try {
+            const subscription = await prisma.walletSubscription.findFirst({
+                where: {
+                    userId,
+                    walletAddress,
+                    isActive: true
+                }
+            });
+            
+            console.log('[WalletNotification] Subscription check:', !!subscription);
+            return !!subscription;
+        } catch (error) {
+            console.error('[WalletNotification] Check subscription error:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Get user's wallet subscriptions
+     */
+    async getUserSubscriptions(userId) {
+        try {
+            const subscriptions = await prisma.walletSubscription.findMany({
+                where: {
+                    userId,
+                    isActive: true
+                },
+                select: {
+                    id: true,
+                    walletAddress: true,
+                    createdAt: true
+                }
+            });
+            
+            return subscriptions;
+        } catch (error) {
+            console.error('[WalletNotification] Get subscriptions error:', error);
             throw error;
         }
     }
@@ -72,6 +146,13 @@ class WalletNotificationService {
     async sendNotification(subscription, payload) {
         try {
             const sub = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
+            
+            // Skip browser notification fallbacks (they're handled by the frontend)
+            if (sub.endpoint === 'browser-notification') {
+                console.log('[WalletNotification] Skipping browser notification fallback - handled by frontend');
+                return true;
+            }
+            
             await webpush.sendNotification(sub, JSON.stringify(payload));
             return true;
         } catch (error) {
@@ -145,30 +226,6 @@ class WalletNotificationService {
             return `🔄 Swapped ${activity.fromToken} to ${activity.toToken}`;
         } else {
             return `Activity detected on tracked wallet`;
-        }
-    }
-    
-    /**
-     * Get user's wallet subscriptions
-     */
-    async getUserSubscriptions(userId) {
-        try {
-            const subscriptions = await prisma.walletSubscription.findMany({
-                where: {
-                    userId,
-                    isActive: true
-                },
-                select: {
-                    id: true,
-                    walletAddress: true,
-                    createdAt: true
-                }
-            });
-            
-            return subscriptions;
-        } catch (error) {
-            console.error('[WalletNotification] Get subscriptions error:', error);
-            throw error;
         }
     }
 }

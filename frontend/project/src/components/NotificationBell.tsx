@@ -11,18 +11,18 @@ interface NotificationBellProps {
 export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddress }) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
 
   useEffect(() => {
     checkSubscription();
   }, [walletAddress]);
 
   const checkSubscription = async () => {
-    if (!user) return;
+    if (!user || !token) return;
     
     try {
-      const token = localStorage.getItem('token');
       console.log('[NotificationBell] Checking subscription for:', walletAddress);
+      console.log('[NotificationBell] Using token from auth store, length:', token.length);
       
       const response = await fetch('http://localhost:3001/api/notifications/check', {
         method: 'POST',
@@ -52,34 +52,72 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
     }
 
     if (Notification.permission !== 'denied') {
+      console.log('[NotificationBell] Requesting notification permission...');
       const permission = await Notification.requestPermission();
+      console.log('[NotificationBell] Permission result:', permission);
       return permission === 'granted';
     }
 
-    toast.error('Notification permission denied');
+    toast.error('Notification permission denied. Please enable notifications in your browser settings.');
     return false;
   };
 
   const subscribeToPush = async () => {
     try {
       console.log('[NotificationBell] Getting service worker registration...');
+      
+      // Check if service worker is supported
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Service workers are not supported in this browser');
+      }
+      
       const registration = await navigator.serviceWorker.ready;
+      console.log('[NotificationBell] Service worker registration ready');
+      
+      // Check if push manager is available
+      if (!registration.pushManager) {
+        throw new Error('Push manager is not available');
+      }
       
       // Get VAPID public key from server
       console.log('[NotificationBell] Fetching VAPID key...');
       const response = await fetch('http://localhost:3001/api/notifications/vapid-key');
       const { publicKey } = await response.json();
-      console.log('[NotificationBell] VAPID public key received:', publicKey ? 'Yes' : 'No');
       
+      if (!publicKey) {
+        throw new Error('Failed to get VAPID public key from server');
+      }
+      
+      console.log('[NotificationBell] VAPID public key received, length:', publicKey.length);
+      
+      // Check if already subscribed
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        console.log('[NotificationBell] Already subscribed, using existing subscription');
+        return existingSubscription;
+      }
+      
+      console.log('[NotificationBell] Creating new push subscription...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
-
+      
+      console.log('[NotificationBell] Push subscription created successfully');
       return subscription;
     } catch (error) {
       console.error('Failed to subscribe to push:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.message.includes('Service workers are not supported')) {
+        throw new Error('This browser does not support push notifications. Please try Chrome, Firefox, or Edge.');
+      } else if (error.message.includes('Push manager is not available')) {
+        throw new Error('Push notifications are not available in this browser.');
+      } else if (error.message.includes('registration failed')) {
+        throw new Error('Push service registration failed. This might be due to browser restrictions or network issues.');
+      } else {
+        throw new Error(`Failed to subscribe to push notifications: ${error.message}`);
+      }
     }
   };
 
@@ -102,8 +140,22 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
           return;
         }
 
-        // Subscribe to push
-        const subscription = await subscribeToPush();
+        // Try to subscribe to push notifications
+        let subscription;
+        let pushEnabled = false;
+        
+        try {
+          subscription = await subscribeToPush();
+          pushEnabled = true;
+          console.log('[NotificationBell] Push notifications enabled');
+        } catch (pushError) {
+          console.warn('[NotificationBell] Push notifications failed, falling back to browser notifications:', pushError);
+          // Continue with browser notifications even if push fails
+          subscription = { 
+            endpoint: 'browser-notification', 
+            keys: { auth: 'browser', p256dh: 'fallback' } 
+          };
+        }
 
         // Save subscription to server
         console.log('[NotificationBell] Saving subscription to server...');
@@ -111,24 +163,35 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             walletAddress,
-            subscription
+            subscription,
+            isPushEnabled: pushEnabled
           })
         });
 
         if (response.ok) {
           setIsSubscribed(true);
-          toast.success(`Notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+          
+          if (pushEnabled) {
+            toast.success(`Push notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+          } else {
+            toast.success(`Browser notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+          }
           
           // Show test notification
-          new Notification('Zenith Trader', {
-            body: `You will receive notifications for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
-            icon: '/pwa-192x192.png',
-            badge: '/pwa-96x96.svg'
-          });
+          try {
+            new Notification('Zenith Trader', {
+              body: `You will receive notifications for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+              icon: '/pwa-192x192.png',
+              badge: '/pwa-96x96.svg',
+              tag: `wallet-${walletAddress}`
+            });
+          } catch (notifError) {
+            console.warn('[NotificationBell] Could not show test notification:', notifError);
+          }
         } else {
           throw new Error('Failed to save subscription');
         }
@@ -139,7 +202,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ walletAddress })
         });
@@ -151,7 +214,25 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
       }
     } catch (error) {
       console.error('Notification error:', error);
-      toast.error('Failed to update notification settings');
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to update notification settings';
+      
+      if (error.message.includes('Service workers are not supported')) {
+        errorMessage = 'Push notifications are not supported in this browser';
+      } else if (error.message.includes('Push manager is not available')) {
+        errorMessage = 'Push notifications are not available';
+      } else if (error.message.includes('registration failed')) {
+        errorMessage = 'Push service registration failed. Please try again later.';
+      } else if (error.message.includes('permission denied')) {
+        errorMessage = 'Notification permission was denied. Please enable notifications in your browser settings.';
+      } else if (error.message.includes('Failed to save subscription')) {
+        errorMessage = 'Failed to save subscription to server. Please try again.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -175,15 +256,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
 
   return (
     <Button
-      variant={isSubscribed ? "default" : "outline"}
+      variant="ghost"
       size="icon"
       onClick={toggleNotification}
       disabled={isLoading}
-      className="relative"
+      className="relative text-slate-400 hover:text-white hover:bg-slate-700/50"
       title={isSubscribed ? "Disable notifications" : "Enable notifications"}
     >
       {isSubscribed ? (
-        <Bell className="h-4 w-4" />
+        <Bell className="h-4 w-4 text-emerald-400" />
       ) : (
         <BellOff className="h-4 w-4" />
       )}

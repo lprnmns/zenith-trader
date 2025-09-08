@@ -77,13 +77,16 @@ class AdminNotificationService {
      */
     async notifyPositionDetection(signal) {
         const subject = `Position Detected: ${signal.type} ${signal.token}`;
+        const value = signal.value || 0;
+        const percentage = signal.percentage || 0;
+        
         const html = `
             <h2>${signal.type === 'BUY' ? '📈' : '📉'} Position Detected</h2>
             <p><strong>Wallet:</strong> ${signal.walletAddress}</p>
             <p><strong>Action:</strong> ${signal.type}</p>
             <p><strong>Token:</strong> ${signal.token}</p>
-            <p><strong>Percentage:</strong> ${signal.percentage.toFixed(2)}%</p>
-            <p><strong>Value:</strong> $${signal.value.toFixed(2)}</p>
+            <p><strong>Percentage:</strong> ${percentage.toFixed(2)}%</p>
+            <p><strong>Value:</strong> $${value.toFixed(2)}</p>
             <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
         `;
         
@@ -92,7 +95,7 @@ class AdminNotificationService {
         // Push notification
         await this.sendAdminPushNotification({
             title: `${signal.type === 'BUY' ? '📈' : '📉'} ${signal.token}`,
-            body: `${signal.type} signal: ${signal.percentage.toFixed(2)}% of portfolio`,
+            body: `${signal.type} signal: ${percentage.toFixed(2)}% of portfolio`,
             tag: 'position-signal'
         });
     }
@@ -105,18 +108,21 @@ class AdminNotificationService {
             `✅ Signal Executed: ${signal.token}` : 
             `❌ Signal Failed: ${signal.token}`;
             
+        const sizeInUsdt = signal.sizeInUsdt || 0;
+        const balance = details?.balance || 0;
+        
         const html = `
             <h2>${success ? '✅ Signal Executed Successfully' : '❌ Signal Execution Failed'}</h2>
             <p><strong>Token:</strong> ${signal.token}</p>
             <p><strong>Type:</strong> ${signal.type}</p>
-            <p><strong>Size:</strong> ${signal.sizeInUsdt?.toFixed(2)} USDT</p>
+            <p><strong>Size:</strong> ${sizeInUsdt.toFixed(2)} USDT</p>
             ${success ? 
-                `<p><strong>Order ID:</strong> ${details.orderId}</p>` :
-                `<p><strong>Error:</strong> ${details.error}</p>`
+                `<p><strong>Order ID:</strong> ${details.orderId || 'N/A'}</p>` :
+                `<p><strong>Error:</strong> ${details.error || 'Unknown error'}</p>`
             }
             <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
             <hr>
-            <p><strong>Account Balance:</strong> ${details.balance?.toFixed(2)} USDT</p>
+            <p><strong>Account Balance:</strong> ${balance.toFixed(2)} USDT</p>
         `;
         
         await this.sendEmail(subject, html);
@@ -124,7 +130,7 @@ class AdminNotificationService {
         // Push notification
         await this.sendAdminPushNotification({
             title: success ? '✅ Order Placed' : '❌ Order Failed',
-            body: `${signal.token}: ${success ? 'Success' : details.error}`,
+            body: `${signal.token}: ${success ? 'Success' : (details.error || 'Unknown error')}`,
             tag: 'signal-execution'
         });
     }
@@ -214,7 +220,7 @@ class AdminNotificationService {
                 <h3>🎯 Strategy Performance</h3>
                 <ul>
                     ${strategies.map(s => `
-                        <li>${s.name}: ${s.trades.length} trades, PnL: $${s.currentPnL.toFixed(2)}</li>
+                        <li>${s.name}: ${s.trades.length} trades, PnL: $${(s.currentPnL || 0).toFixed(2)}</li>
                     `).join('')}
                 </ul>
                 <hr>

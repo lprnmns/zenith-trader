@@ -680,10 +680,10 @@ export default function UserWalletExplorer() {
                     <Button 
                       onClick={() => addWalletNotification(walletAnalysis.address)}
                       disabled={isAnalyzing}
-                      className="flex items-center gap-2"
+                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:pointer-events-none disabled:opacity-50 border-2 border-orange-500 text-orange-500 bg-transparent hover:bg-orange-500 hover:text-white hover:border-orange-500 h-10 px-4 shadow-lg hover:shadow-orange-500/25"
                     >
-                      <Bell className="h-4 w-4" />
-                      Bu Wallet'ı Takip Et
+                      <Bell className="h-4 w-4 mr-2" />
+                      <span className="font-semibold">Bu Wallet'ı Takip Et</span>
                     </Button>
                   </div>
                 </CardContent>

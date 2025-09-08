@@ -45,7 +45,13 @@ async function runSignalCheck() {
 	console.log(`[Engine] ${activeStrategies.size} strateji için sinyal kontrol döngüsü başlatılıyor...`);
 	for (const [id, strategy] of activeStrategies.entries()) {
 		const checkTime = new Date();
-		const newSignals = await positionSignalService.getNewPositionSignals(strategy.walletAddress, strategy.lastChecked);
+		
+		// Use server start time if this is the first check (no lastChecked)
+		const sinceDate = strategy.lastChecked || new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago if first check
+		
+		console.log(`[Engine] [${strategy.name}] için sinyal kontrolü başlatılıyor... Son kontrol: ${sinceDate.toLocaleString()}`);
+		
+		const newSignals = await positionSignalService.getNewPositionSignals(strategy.walletAddress, sinceDate);
 
 			if (Array.isArray(newSignals) && newSignals.length > 0) {
 				console.log(`🔥 [${strategy.name}] için ${newSignals.length} yeni sinyal bulundu!`);
@@ -290,7 +296,7 @@ async function runSignalCheck() {
 						await adminNotificationService.notifySignalExecution(
 							{ token: signal.token, type: signal.type, sizeInUsdt: (accountBalance * walletPercentage) / 100 },
 							false,
-							{ error: error?.response?.data?.msg || error?.message, balance: accountBalance }
+							{ error: error?.response?.data?.msg || error?.message, balance: accountBalance || 0 }
 						);
 					}
 					console.error(`🔍 [${strategy.name}] Detaylı hata:`, {

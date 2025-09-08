@@ -36,7 +36,8 @@
       "Bash(npm start:*)",
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(del:*)"
     ],
     "deny": [],
     "ask": []

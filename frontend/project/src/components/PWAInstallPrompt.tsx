@@ -107,7 +107,7 @@ export const PWAInstallPrompt: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Smartphone className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Zenith Trader Uygulaması</CardTitle>
+            <CardTitle className="text-lg">Zenith Trader App</CardTitle>
           </div>
           <Button
             variant="ghost"
@@ -119,21 +119,21 @@ export const PWAInstallPrompt: React.FC = () => {
           </Button>
         </div>
         <CardDescription>
-          Daha iyi deneyim için uygulamayı telefonunuza yükleyin
+          Install the app on your phone for a better experience
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex flex-col space-y-2">
           <div className="text-sm text-gray-600">
-            ✅ Anında bildirimler
+            ✅ Instant notifications
             <br />
-            ✅ Offline erişim
+            ✅ Offline access
             <br />
-            ✅ Ana ekrana kısayol
+            ✅ Home screen shortcut
           </div>
           <Button onClick={handleInstallClick} className="w-full">
             <Download className="mr-2 h-4 w-4" />
-            Uygulamayı Yükle
+            Install App
           </Button>
         </div>
       </CardContent>

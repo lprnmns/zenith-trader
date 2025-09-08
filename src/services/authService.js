@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
+const adminNotificationService = require('./adminNotificationService');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -96,6 +97,13 @@ async function register(email, password, role = 'user') {
     const token = generateToken(user);
 
     console.log(`[Auth] User registered: ${email} (${role})`);
+
+    // Send admin notification for new user registration
+    try {
+      await adminNotificationService.notifyNewUser(user);
+    } catch (notificationError) {
+      console.error('[Auth] Failed to send admin notification:', notificationError);
+    }
 
     return {
       success: true,

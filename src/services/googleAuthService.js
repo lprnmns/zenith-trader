@@ -2,6 +2,7 @@ const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken } = require('../middleware/auth');
+const adminNotificationService = require('./adminNotificationService');
 
 const prisma = new PrismaClient();
 
@@ -85,7 +86,12 @@ class GoogleAuthService {
       if (user) {
         // Update existing user with Google info if not already set
         const updates = {};
-        if (!user.googleId) updates.googleId = googleId;
+        let isFirstGoogleLogin = false;
+        
+        if (!user.googleId) {
+          updates.googleId = googleId;
+          isFirstGoogleLogin = true;
+        }
         if (!user.googleEmail) updates.googleEmail = googleEmail;
         if (!user.isActive) updates.isActive = true;
         updates.lastLoginAt = new Date();
@@ -95,6 +101,16 @@ class GoogleAuthService {
             where: { id: user.id },
             data: updates
           });
+          
+          // Send notification if this is the first time linking Google account
+          if (isFirstGoogleLogin) {
+            try {
+              await adminNotificationService.notifyNewUser(user);
+              console.log('[GoogleAuth] First Google login notification sent for existing user:', user.email);
+            } catch (notificationError) {
+              console.error('[GoogleAuth] Failed to send first Google login notification:', notificationError);
+            }
+          }
         }
       } else {
         // Create new user
@@ -109,6 +125,13 @@ class GoogleAuthService {
             lastLoginAt: new Date()
           }
         });
+        
+        // Send admin notification for new Google user registration
+        try {
+          await adminNotificationService.notifyNewUser(user);
+        } catch (notificationError) {
+          console.error('[GoogleAuth] Failed to send admin notification:', notificationError);
+        }
       }
 
       // Generate JWT token

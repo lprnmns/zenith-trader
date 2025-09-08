@@ -55,12 +55,12 @@ export function RegisterForm() {
   return (
     <div className="space-y-6">
       <Button
-        disabled
+        onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/auth/google`}
         variant="outline"
-        className="w-full h-11 border-slate-600 bg-slate-800/30 text-slate-500 cursor-not-allowed opacity-50"
+        className="w-full h-11 border-slate-600 bg-slate-800/30 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-colors"
       >
         <Chrome className="w-5 h-5 mr-2" />
-        Google Sign-up (Yakında)
+        Sign up with Google
       </Button>
 
       <div className="relative">
@@ -120,16 +120,7 @@ export function RegisterForm() {
         </Button>
       </form>
 
-      {/* Role info */}
-      <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-        <div className="flex items-center space-x-2">
-          <Lock className="h-4 w-4 text-green-600" />
-          <p className="text-green-800 text-sm">
-            <strong>Normal Kullanıcı:</strong> Cüzdan analizi + bildirimler
-          </p>
-        </div>
-      </div>
-
+      
       <p className="text-center text-slate-400 text-base">
         Already have an account?{' '}
         <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
