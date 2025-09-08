@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { formatCurrency, formatPercentage, safeNumber } from '@/lib/utils';
-import { Search, ExternalLink, Copy, Star, Shield, Bell } from 'lucide-react';
+import { formatCurrency, formatPercentage, safeNumber, truncateAddress } from '@/lib/utils';
+import { Search, ExternalLink, Copy, Star, Shield, Bell, BarChart3, Wallet, BrainCircuit } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -121,6 +121,47 @@ export function ExplorerPage() {
     } catch {}
   };
 
+  // Format large currency values (e.g., $1.2M, $250.3k)
+  const formatLargeCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}k`;
+    } else {
+      return `$${value.toFixed(0)}`;
+    }
+  };
+
+  // Handle analyze for suggested wallets
+  const handleAnalyzeWallet = async (address: string) => {
+    setWalletAddress(address);
+    await handleAnalyze();
+  };
+
+  // Get risk badge variant with enhanced styling
+  const getRiskVariant = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low': return 'default';
+      case 'medium': return 'secondary';
+      case 'high': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  // Get risk badge styling for better visual hierarchy
+  const getRiskBadgeStyle = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low':
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20';
+      case 'medium':
+        return 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20';
+      case 'high':
+        return 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20';
+      default:
+        return 'bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20';
+    }
+  };
+
   const handleCopyWallet = () => {
     if (!walletAddress) return;
     
@@ -201,13 +242,12 @@ export function ExplorerPage() {
       {/* Suggested Wallets shown initially (above results) until analyze is clicked) */}
       {!hasAnalyzed && (
       <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-2">
               <Star className="w-5 h-5 text-emerald-400" /> Suggested Wallets
             </CardTitle>
             <div className="flex items-center gap-3">
-              {/* category tabs removed; backend supplies final ranking */}
               <div className="flex items-center gap-2">
                 <span className="text-slate-400 text-sm">Sort by</span>
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
@@ -231,71 +271,134 @@ export function ExplorerPage() {
         <CardContent className="pt-0">
           {loadingSuggested ? (
             <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              {[...Array(8)].map((_, index) => (
+                <div key={index} className="flex items-center p-4 border-b border-slate-800">
+                  <div className="w-16">
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                  <div className="flex-grow grid grid-cols-5 gap-4 items-center">
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="text-right">
+                      <Skeleton className="h-5 w-20 ml-auto" />
+                      <Skeleton className="h-3 w-16 ml-auto mt-1" />
+                    </div>
+                    <div className="text-right">
+                      <Skeleton className="h-5 w-16 ml-auto" />
+                      <Skeleton className="h-3 w-12 ml-auto mt-1" />
+                    </div>
+                    <div className="text-right">
+                      <Skeleton className="h-5 w-12 ml-auto" />
+                      <Skeleton className="h-3 w-16 ml-auto mt-1" />
+                    </div>
+                    <div className="flex justify-end">
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  </div>
+                  <div className="w-10">
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredAndSorted.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-slate-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">No wallets found</h3>
+              <p className="text-slate-400 max-w-md">
+                We couldn't find any suggested wallets at the moment. Please check back later or try analyzing a specific wallet address.
+              </p>
             </div>
           ) : (
-          <Accordion type="single" collapsible className="w-full">
-            {filteredAndSorted.map((w, idx) => (
-                <AccordionItem key={w.address || w.id || idx} value={String(w.address || w.id || idx)} className="border-b border-slate-700/60">
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="w-full grid grid-cols-12 items-center gap-3 text-left">
-                    <div className="col-span-1 text-slate-400 text-sm">#{idx + 1}</div>
-                    <div className="col-span-3">
-                        <div className="text-white font-medium">{w.name || 'Wallet'}</div>
-                        <div className="text-slate-400 text-xs">{w.address}</div>
+            <div className="space-y-1">
+              {filteredAndSorted.map((wallet, index) => (
+                <div 
+                  key={wallet.address || wallet.id || index}
+                  className="group flex items-center p-4 border-b border-slate-800 transition-colors duration-200 hover:bg-slate-800/50 cursor-pointer"
+                >
+                  {/* Left side - Hidden Analyze button that appears on hover */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-4">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleAnalyzeWallet(wallet.address)}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
+                    >
+                      <BarChart3 className="w-4 h-4 mr-1" />
+                      Analyze
+                    </Button>
+                  </div>
+
+                  {/* Main content columns */}
+                  <div className="flex-grow grid grid-cols-5 gap-4 items-center">
+                    {/* Wallet Name & Address */}
+                    <div className="min-w-0">
+                      <div className="text-white font-medium truncate">
+                        {wallet.name || 'Unknown Wallet'}
+                      </div>
+                      <div className="text-slate-400 text-xs font-mono truncate">
+                        {truncateAddress(wallet.address)}
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                        <div className="text-slate-400 text-xs">Open Positions</div>
-                        <div className="text-white font-semibold">{w.openPositionsCount ?? 0}</div>
+
+                    {/* Total Value */}
+                    <div className="text-right">
+                      <div className="text-white text-lg font-bold">
+                        {formatLargeCurrency(wallet.totalValueUsd || 0)}
                       </div>
-                      <div className="col-span-1">
-                        <div className="text-slate-400 text-xs">1D %</div>
-                        <div className={`font-semibold ${Number(w.pnlPercent1d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{w.pnlPercent1d == null ? '-' : `${Number(w.pnlPercent1d).toFixed(2)}%`}</div>
+                      <div className="text-slate-500 text-xs font-medium flex items-center justify-end">
+                        Portfolio Value
+                        <Wallet className="h-3 w-3 inline-block ml-1 text-slate-400" />
                       </div>
-                      <div className="col-span-1">
-                        <div className="text-slate-400 text-xs">7D %</div>
-                        <div className={`font-semibold ${Number(w.pnlPercent7d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{w.pnlPercent7d == null ? '-' : `${Number(w.pnlPercent7d).toFixed(2)}%`}</div>
-                      </div>
-                      <div className="col-span-1">
-                        <div className="text-slate-400 text-xs">30D %</div>
-                        <div className={`font-semibold ${Number(w.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{w.pnlPercent30d == null ? '-' : `${Number(w.pnlPercent30d).toFixed(2)}%`}</div>
-                      </div>
-                      <div className="col-span-1">
-                        <div className="text-slate-400 text-xs">6M %</div>
-                        <div className={`font-semibold ${Number(w.pnlPercent180d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{w.pnlPercent180d == null ? '-' : `${Number(w.pnlPercent180d).toFixed(2)}%`}</div>
-                      </div>
-                      <div className="col-span-1">
-                        <div className="text-slate-400 text-xs">1Y %</div>
-                        <div className={`font-semibold ${Number(w.pnlPercent365d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{w.pnlPercent365d == null ? '-' : `${Number(w.pnlPercent365d).toFixed(2)}%`}</div>
                     </div>
-                      <div className="col-span-1">
-                        <Badge className={w.riskLevel === 'Low' ? 'bg-emerald-500' : w.riskLevel === 'Medium' ? 'bg-yellow-500' : 'bg-red-500'}>
-                          {w.riskLevel || 'Medium'}
+
+                    {/* 30D PnL */}
+                    <div className="text-right">
+                      <div className={`text-lg font-bold ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent30d).toFixed(2)}%`}
+                      </div>
+                      <div className="text-slate-500 text-xs font-medium">30D PnL</div>
+                    </div>
+
+                    {/* Smart Score */}
+                    <div className="text-right">
+                      <div className="text-white text-lg font-bold">
+                        {wallet.smartScore == null ? '-' : Math.round(wallet.smartScore)}
+                      </div>
+                      <div className="text-slate-500 text-xs font-medium flex items-center justify-end">
+                        Smart Score
+                        <BrainCircuit className="h-3 w-3 inline-block ml-1 text-slate-400" />
+                      </div>
+                    </div>
+
+                    {/* Risk Level */}
+                    <div className="flex justify-end">
+                      <Badge 
+                        variant="outline" 
+                        className={`${getRiskBadgeStyle(wallet.riskLevel)} font-semibold px-3 py-1 text-xs`}
+                      >
+                        {wallet.riskLevel || 'Medium'}
                       </Badge>
-                      </div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="py-4">
-                    <div className="flex items-center gap-3 mb-3">
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={(e) => { e.preventDefault(); setWalletAddress(w.address); handleAnalyze(); }}>
-                        Analyze this wallet
-                      </Button>
-                        <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white" onClick={(e) => { e.preventDefault(); window.open(`https://etherscan.io/address/${w.address}`, '_blank'); }}>
-                        <ExternalLink className="w-4 h-4 mr-1" /> View on explorer
-                      </Button>
-                        <Button size="sm" variant="ghost" className="text-slate-300 hover:text-white" onClick={(e) => { e.preventDefault(); handleCopy(w.address); }} title="Copy address">
-                          <Copy className="w-4 h-4 mr-1" /> Copy address
-                        </Button>
-                        {copied === w.address && (<span className="text-emerald-400 text-xs">Copied</span>)}
                     </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+
+                  {/* Right side - Analyze button that appears on hover */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-4">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleAnalyzeWallet(wallet.address)}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
+                    >
+                      <BarChart3 className="w-4 h-4 mr-1" />
+                      Analyze
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

@@ -42,7 +42,7 @@ export function AppLayout() {
 
       {/* 2. Sütun: Kaydırılabilir Ana İçerik Alanı */}
       {/* 'bg-slate-900' veya temanızın ana arka plan rengi */}
-      <main className="flex-1 overflow-y-auto bg-slate-900 relative">
+      <main className="flex-1 overflow-y-auto bg-slate-900 p-4 sm:p-6 md:p-8 relative">
         <FloatingCryptoSymbols />
         
         {/* Mobile Header */}

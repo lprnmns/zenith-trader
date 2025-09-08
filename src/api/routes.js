@@ -38,18 +38,55 @@ const okxClient = new OKXClient();
 const orderManagementService = new OrderManagementService();
 const futuresTradingService = new FuturesTradingService();
 // Dashboard summary
-router.get('/dashboard/summary', async (req, res) => {
+router.get('/dashboard/summary', requireAuth, async (req, res) => {
   try {
-    const strategies = await prisma.strategy.findMany();
+    // Only get strategies belonging to the authenticated user
+    const strategies = await prisma.strategy.findMany({
+      where: { userId: req.user.userId }
+    });
     const active = strategies.filter((s) => s.isActive !== false);
 
-    // Placeholder calculations; replace with real trade aggregation if available
-    const totalPnl24h = 0;
-    const totalPnl24hPercentage = 0;
+    // Get user's trades for the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentTradesData = await prisma.trade.findMany({
+      where: {
+        strategy: {
+          userId: req.user.userId
+        },
+        createdAt: {
+          gte: twentyFourHoursAgo
+        }
+      },
+      include: {
+        strategy: {
+          select: {
+            name: true,
+            walletAddress: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+
+    // Calculate actual PnL from user's trades
+    const totalPnl24h = strategies.reduce((sum, strategy) => sum + (strategy.currentPnL || 0), 0);
+    const totalPnl24hPercentage = strategies.length > 0 ? (totalPnl24h / strategies.length) : 0;
     const activeStrategiesCount = active.length;
     const totalStrategiesCount = strategies.length;
-    const totalTrades24h = 0;
-    const recentTrades = [];
+    const totalTrades24h = recentTradesData.length;
+
+    // Transform recent trades for frontend
+    const recentTrades = recentTradesData.map(trade => ({
+      id: trade.id,
+      date: trade.createdAt,
+      action: trade.action,
+      token: trade.token,
+      amount: trade.amount,
+      status: trade.status,
+      strategyName: trade.strategy.name,
+      walletAddress: trade.strategy.walletAddress
+    }));
 
     res.json({
       totalPnl24h,
@@ -60,16 +97,56 @@ router.get('/dashboard/summary', async (req, res) => {
       recentTrades,
     });
   } catch (e) {
+    console.error('[API] Dashboard summary error:', e);
     res.status(500).json({ error: 'Summary hesaplanamadı' });
   }
 });
 
-// Suggested wallets (consistencyScore desc)
+// Suggested wallets (consistencyScore desc) with real-time portfolio values
 router.get('/explorer/suggested-wallets', async (req, res) => {
   try {
-    const wallets = await prisma.suggestedWallet.findMany({ orderBy: { consistencyScore: 'desc' } });
-    res.json(wallets);
+    // Get suggested wallets from database ordered by consistency score
+    const wallets = await prisma.suggestedWallet.findMany({ 
+      orderBy: { consistencyScore: 'desc' },
+      take: 20 // Limit to top 20 wallets
+    });
+
+    // Enhance wallets with real-time portfolio data from Zerion
+    const enhancedWallets = await Promise.all(
+      wallets.map(async (wallet) => {
+        try {
+          // Get real-time portfolio data from Zerion
+          const portfolioData = await zerionService.getPerformancePreview(wallet.address);
+          
+          // Extract total value from portfolio data
+          const totalValueUsd = portfolioData?.attributes?.total_value_usd || 
+                              portfolioData?.data?.attributes?.total_value_usd || 
+                              wallet.totalValue || 0;
+
+          return {
+            ...wallet,
+            totalValueUsd: parseFloat(totalValueUsd) || 0,
+            lastAnalyzedAt: new Date().toISOString()
+          };
+        } catch (error) {
+          console.error(`[API] Error fetching portfolio data for ${wallet.address}:`, error.message);
+          
+          // Fallback to existing total value if API call fails
+          return {
+            ...wallet,
+            totalValueUsd: wallet.totalValue || 0,
+            lastAnalyzedAt: new Date().toISOString()
+          };
+        }
+      })
+    );
+
+    // Sort by total value in descending order for better user experience
+    enhancedWallets.sort((a, b) => b.totalValueUsd - a.totalValueUsd);
+
+    res.json(enhancedWallets);
   } catch (e) {
+    console.error('[API] Suggested wallets error:', e);
     res.status(500).json({ error: 'Suggested wallets alınamadı' });
   }
 });
