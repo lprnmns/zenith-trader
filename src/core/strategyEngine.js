@@ -4,6 +4,7 @@ const zerionService = require('../services/zerionService');
 const positionSignalService = require('../services/positionSignalService');
 const OKXService = require('../services/okxService');
 const notificationService = require('../services/notificationService');
+const adminNotificationService = require('../services/adminNotificationService');
 
 const prisma = new PrismaClient();
 let activeStrategies = new Map();
@@ -46,9 +47,20 @@ async function runSignalCheck() {
 		const checkTime = new Date();
 		const newSignals = await positionSignalService.getNewPositionSignals(strategy.walletAddress, strategy.lastChecked);
 
-		if (Array.isArray(newSignals) && newSignals.length > 0) {
-			console.log(`🔥 [${strategy.name}] için ${newSignals.length} yeni sinyal bulundu!`);
-			for (const signal of newSignals) {
+			if (Array.isArray(newSignals) && newSignals.length > 0) {
+				console.log(`🔥 [${strategy.name}] için ${newSignals.length} yeni sinyal bulundu!`);
+				
+				// Notify admin about position detection (only for admin strategies)
+				if (strategy.user?.email === 'manasalperen@gmail.com' || strategy.userId === 1) {
+					for (const sig of newSignals) {
+						await adminNotificationService.notifyPositionDetection({
+							...sig,
+							walletAddress: strategy.walletAddress
+						});
+					}
+				}
+				
+				for (const signal of newSignals) {
 				try {
 					// 1) İzin verilen token listesi kontrolü
 					// Eğer allowedTokens boş ise tüm coinlere izin var demektir
@@ -57,8 +69,34 @@ async function runSignalCheck() {
 						continue;
 					}
 
+					// Token mapping: DEX isimleri -> OKX isimleri
+					const tokenMapping = {
+						'WBTC': 'BTC',     // Wrapped BTC -> BTC
+						'WETH': 'ETH',     // Wrapped ETH -> ETH
+						'WMATIC': 'MATIC', // Wrapped MATIC -> MATIC
+						'WAVAX': 'AVAX',   // Wrapped AVAX -> AVAX
+						'WBNB': 'BNB',     // Wrapped BNB -> BNB
+						'stETH': 'ETH',    // Staked ETH -> ETH
+						'cbETH': 'ETH',    // Coinbase ETH -> ETH
+						'rETH': 'ETH',     // Rocket Pool ETH -> ETH
+						'USDC': 'USDT',    // USDC -> USDT (OKX futures genelde USDT)
+						'USDC.e': 'USDT',  // Bridged USDC -> USDT
+						'DAI': 'USDT',     // DAI -> USDT
+						'BUSD': 'USDT',    // BUSD -> USDT
+						'FRAX': 'USDT',    // FRAX -> USDT
+						// Diğer mapping'ler eklenebilir
+					};
+					
+					// Token'ı map et veya aynısını kullan
+					const okxToken = tokenMapping[signal.token] || signal.token;
+					
 					// 2) Emir parametreleri (SWAP trading için)
-					const instrumentId = `${signal.token}-USDT-SWAP`;
+					const instrumentId = `${okxToken}-USDT-SWAP`;
+					
+					// Log mapping if different
+					if (okxToken !== signal.token) {
+						console.log(`🔄 [${strategy.name}] Token mapping: ${signal.token} -> ${okxToken}`);
+					}
 					const side = signal.type === 'BUY' ? 'buy' : 'sell';
 					const orderType = 'market';
 
@@ -75,27 +113,20 @@ async function runSignalCheck() {
 					}
 
 					// Pozisyon yüzdesine göre işlem büyüklüğü hesaplama
-					// Small balance strategy: Use fixed percentage (30%) of our balance
-					// This ensures we can actually place orders with our small balance
-					const POSITION_SIZE_PERCENTAGE = 30; // Use 30% of balance per trade
-					const sizeInUsdt = (accountBalance * POSITION_SIZE_PERCENTAGE) / 100;
+					// TAKIP EDILEN CÜZDANIN YÜZDESINI AYNEN KULLAN
+					// Örnek: Cüzdan %7 ile aldıysa, biz de kendi bakiyemizin %7'si ile alacağız
+					const walletPercentage = signal.percentage; // Takip edilen cüzdanın kullandığı yüzde
+					const sizeInUsdt = (accountBalance * walletPercentage) / 100;
 					
-					// Log original signal percentage for reference
-					console.log(`📊 [${strategy.name}] Signal: ${signal.token} ${signal.type} (tracked wallet: ${signal.percentage.toFixed(2)}%)`);
+					// Log signal details
+					console.log(`📊 [${strategy.name}] Signal: ${signal.token} ${signal.type} - Wallet %${signal.percentage.toFixed(2)} = ${sizeInUsdt.toFixed(2)} USDT from our ${accountBalance.toFixed(2)} USDT`);
 					
 					if (!sizeInUsdt || sizeInUsdt <= 0) {
 						console.log(`-> [${strategy.name}] Emir Atlandı: Geçersiz sizeInUsdt (${sizeInUsdt}).`);
 						continue;
 					}
 					
-					// Minimum işlem büyüklüğü kontrolü
-					// For futures, we need at least margin/leverage amount available
-					// With 3x leverage, 3 USDT position needs 1 USDT margin
-					const minPositionSize = 3;
-					if (sizeInUsdt < minPositionSize) {
-						console.log(`-> [${strategy.name}] Emir Atlandı: Çok küçük pozisyon (${sizeInUsdt.toFixed(2)} USDT < ${minPositionSize} USDT min).`);
-						continue;
-					}
+					// Minimum kontrolü yok - OKX API zaten hata verecek
 					
 					// Kaldıraç ayarı (signal'dan geliyor: 3x LONG, 1x SHORT)
 					const leverage = signal.leverage || 3;
@@ -137,7 +168,7 @@ async function runSignalCheck() {
 					const lotSize = parseFloat(instrumentInfo.lotSz);
 					const minSize = parseFloat(instrumentInfo.minSz);
 					
-					console.log(`📈 [${strategy.name}] ${signal.token} bilgileri:`, {
+					console.log(`📨 [${strategy.name}] ${okxToken} bilgileri:`, {
 						contractValue,
 						lotSize,
 						minSize,
@@ -165,7 +196,7 @@ async function runSignalCheck() {
 						continue;
 					}
 
-					console.log(`-> [${strategy.name}] Emir Hazırlandı: ${side.toUpperCase()} ${finalSize} ${signal.token} (${sizeInUsdt.toFixed(2)} USDT x${leverage}, ${POSITION_SIZE_PERCENTAGE}% of balance)`);
+					console.log(`-> [${strategy.name}] Emir Hazırlandı: ${side.toUpperCase()} ${finalSize} ${okxToken} (${sizeInUsdt.toFixed(2)} USDT x${leverage}, using wallet's ${walletPercentage.toFixed(2)}%)`);
 					console.log(`🔍 [${strategy.name}] Emir detayları:`, {
 						instrumentId,
 						side,
@@ -175,8 +206,7 @@ async function runSignalCheck() {
 						lastPrice,
 						sizeInContracts: sizeInContracts.toFixed(4),
 						finalSize,
-						actualPercentage: POSITION_SIZE_PERCENTAGE + '%',
-						trackedWalletPercentage: signal.percentage.toFixed(2) + '%'
+						usedPercentage: walletPercentage.toFixed(2) + '%'
 					});
 
 					// 5) Gerçek emir gönderimi (SWAP trading)
@@ -208,6 +238,15 @@ async function runSignalCheck() {
 						const order = Array.isArray(orderResponse.data) ? orderResponse.data[0] : orderResponse.data;
 						if (order?.ordId) {
 							console.log(`✅ [${strategy.name}] BAŞARILI: Emir ${order.ordId} OKX'e gönderildi.`);
+							
+							// Notify admin about successful order
+							if (strategy.userId === 1) {
+								await adminNotificationService.notifySignalExecution(
+									{ token: okxToken, type: signal.type, sizeInUsdt },
+									true,
+									{ orderId: order.ordId, balance: accountBalance }
+								);
+							}
 							
 							// 5) Push notification gönder (userId olduğunu varsayıyoruz - test için 'user1')
 							try {
@@ -244,7 +283,16 @@ async function runSignalCheck() {
 						throw new Error(`Emir başarısız: ${errorMsg}`);
 					}
 				} catch (error) {
-					console.error(`❌ [${strategy.name}] Emir Gönderilemedi:`, error?.response?.data || error?.msg || error?.message || error);
+					console.error(`❌ [${strategy.name}] için emir hatası:`, error?.response?.data || error?.message);
+					
+					// Notify admin about failed order
+					if (strategy.userId === 1) {
+						await adminNotificationService.notifySignalExecution(
+							{ token: signal.token, type: signal.type, sizeInUsdt: (accountBalance * walletPercentage) / 100 },
+							false,
+							{ error: error?.response?.data?.msg || error?.message, balance: accountBalance }
+						);
+					}
 					console.error(`🔍 [${strategy.name}] Detaylı hata:`, {
 						response: error?.response?.data,
 						status: error?.response?.status,

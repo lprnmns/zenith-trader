@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency, formatPercentage, safeNumber } from '@/lib/utils';
-import { Search, ExternalLink, Copy, Star, Shield } from 'lucide-react';
+import { Search, ExternalLink, Copy, Star, Shield, Bell } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSuggestedWallets, getWalletAnalysis } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -345,7 +346,10 @@ export function ExplorerPage() {
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Portfolio Value (Realized + Unrealized)</CardTitle>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-white">Portfolio Value (Realized + Unrealized)</CardTitle>
+                  <NotificationBell walletAddress={walletAddress} />
+                </div>
                 {performanceData.length > 0 && (
                   <span className="text-sm text-slate-400">
                     {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
