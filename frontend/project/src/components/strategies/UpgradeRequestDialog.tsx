@@ -13,12 +13,19 @@ interface UpgradeRequestDialogProps {
 }
 
 export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDialogProps) {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState(user?.email || '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !token) {
+      toast.error('Authentication error. Please login again.');
+      setIsSubmitting(false);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -26,7 +33,7 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ email })
       });
