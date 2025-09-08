@@ -19,7 +19,7 @@ class WalletNotificationService {
             console.log('[WalletNotification] Subscribing user', userId, 'to wallet', walletAddress);
             
             // Check if subscription already exists
-            const existingSubscription = await prisma.walletSubscription.findFirst({
+            const existingSubscription = await prisma.userWalletNotification.findFirst({
                 where: {
                     userId,
                     walletAddress
@@ -28,7 +28,7 @@ class WalletNotificationService {
             
             if (existingSubscription) {
                 // Update existing subscription
-                const walletSub = await prisma.walletSubscription.update({
+                const walletSub = await prisma.userWalletNotification.update({
                     where: { id: existingSubscription.id },
                     data: {
                         subscription: JSON.stringify(subscription),
@@ -40,7 +40,7 @@ class WalletNotificationService {
             }
             
             // Create new subscription
-            const walletSub = await prisma.walletSubscription.create({
+            const walletSub = await prisma.userWalletNotification.create({
                 data: {
                     userId,
                     walletAddress,
@@ -77,7 +77,7 @@ class WalletNotificationService {
         try {
             console.log('[WalletNotification] Unsubscribing user', userId, 'from wallet', walletAddress);
             
-            await prisma.walletSubscription.updateMany({
+            await prisma.userWalletNotification.updateMany({
                 where: {
                     userId,
                     walletAddress
@@ -100,7 +100,7 @@ class WalletNotificationService {
      */
     async isSubscribedToWallet(userId, walletAddress) {
         try {
-            const subscription = await prisma.walletSubscription.findFirst({
+            const subscription = await prisma.userWalletNotification.findFirst({
                 where: {
                     userId,
                     walletAddress,
@@ -121,7 +121,7 @@ class WalletNotificationService {
      */
     async getUserSubscriptions(userId) {
         try {
-            const subscriptions = await prisma.walletSubscription.findMany({
+            const subscriptions = await prisma.userWalletNotification.findMany({
                 where: {
                     userId,
                     isActive: true
@@ -172,7 +172,7 @@ class WalletNotificationService {
     async notifyWalletActivity(walletAddress, activity) {
         try {
             // Get all active subscriptions for this wallet
-            const subscriptions = await prisma.walletSubscription.findMany({
+            const subscriptions = await prisma.userWalletNotification.findMany({
                 where: {
                     walletAddress,
                     isActive: true

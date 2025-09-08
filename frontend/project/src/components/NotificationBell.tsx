@@ -260,7 +260,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
       size="icon"
       onClick={toggleNotification}
       disabled={isLoading}
-      className="relative text-slate-400 hover:text-white hover:bg-slate-700/50"
+      className="relative text-slate-400 hover:text-white hover:bg-slate-700/50 z-50"
       title={isSubscribed ? "Disable notifications" : "Enable notifications"}
     >
       {isSubscribed ? (
@@ -269,7 +269,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
         <BellOff className="h-4 w-4" />
       )}
       {isSubscribed && (
-        <span className="absolute top-0 right-0 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+        <span className="absolute top-0 right-0 h-2 w-2 bg-green-500 rounded-full animate-pulse z-51" />
       )}
     </Button>
   );
