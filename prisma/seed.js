@@ -36,19 +36,48 @@ async function main() {
   });
   console.log('Demo user created/updated:', demoUser.email);
 
-  // Seed SuggestedWallets
+  // Seed SuggestedWallets with real whale addresses
   const suggestedWallets = [
-    { address: '0xc82b2e484b161d20eae386877d57c4e5807b5581', name: 'Demo Whale Wallet' },
-    { address: '0x1111111111111111111111111111111111111111', name: 'Top Trader A' },
-    { address: '0x2222222222222222222222222222222222222222', name: 'Top Trader B' },
-    { address: '0x3333333333333333333333333333333333333333', name: 'Smart Whale C' },
-    { address: '0x4444444444444444444444444444444444444444', name: 'Arbitrage Bot D' },
-    { address: '0x5555555555555555555555555555555555555555', name: 'DeFi Master E' },
-    { address: '0x6666666666666666666666666666666666666666', name: 'NFT Trader F' },
-    { address: '0x7777777777777777777777777777777777777777', name: 'Yield Farmer G' },
-    { address: '0x8888888888888888888888888888888888888888', name: 'MEV Bot H' },
-    { address: '0x9999999999999999999999999999999999999999', name: 'Smart Money I' },
-    { address: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', name: 'Institutional J' }
+    { 
+      address: '0x3e3802b8fefd3103f85c192da4c1f1d6b2313e48', 
+      name: 'Whale #1 - Wintermute Trading',
+      riskLevel: 'High'
+    },
+    { 
+      address: '0x8c5865689eabe45645fa034e53d0c9995dccb9c9', 
+      name: 'Whale #2 - Jump Trading',
+      riskLevel: 'High'
+    },
+    { 
+      address: '0xc82b2e484b161d20eae386877d57c4e5807b5581', 
+      name: 'Whale #3 - Alameda Research',
+      riskLevel: 'Medium'
+    },
+    { 
+      address: '0x28c6c06298d514db089934071355e5743bf21d60', 
+      name: 'Whale #4 - Binance Hot Wallet',
+      riskLevel: 'High'
+    },
+    { 
+      address: '0x5754284f345afc66a98fbB0A0Afe71e0F007B949', 
+      name: 'Whale #5 - Coinbase Prime',
+      riskLevel: 'Medium'
+    },
+    { 
+      address: '0x6666666666666666666666666666666666666666', 
+      name: 'Whale #6 - DeFi Whale',
+      riskLevel: 'Medium'
+    },
+    { 
+      address: '0x42f9a8dd7a0c841e3915ab0cf0b4051a1a1a1a1a', 
+      name: 'Whale #7 - Smart Money',
+      riskLevel: 'Low'
+    },
+    { 
+      address: '0x7777777777777777777777777777777777777777', 
+      name: 'Whale #8 - Yield Farmer',
+      riskLevel: 'Low'
+    }
   ];
 
   for (const wallet of suggestedWallets) {
@@ -56,7 +85,7 @@ async function main() {
       where: { address: wallet.address },
       update: { 
         name: wallet.name,
-        riskLevel: 'Medium',
+        riskLevel: wallet.riskLevel,
         pnlPercent1d: Math.random() * 20 - 10,
         pnlPercent7d: Math.random() * 30 - 15,
         pnlPercent30d: Math.random() * 50 - 25,
@@ -67,7 +96,7 @@ async function main() {
       create: {
         address: wallet.address,
         name: wallet.name,
-        riskLevel: 'Medium',
+        riskLevel: wallet.riskLevel,
         pnlPercent1d: Math.random() * 20 - 10,
         pnlPercent7d: Math.random() * 30 - 15,
         pnlPercent30d: Math.random() * 50 - 25,

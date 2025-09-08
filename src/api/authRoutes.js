@@ -282,9 +282,9 @@ router.get('/okx-credentials', authService.authenticateToken, async (req, res) =
  */
 router.post('/upgrade-request', authService.authenticateToken, async (req, res) => {
   try {
-    const { email, contactInfo, message } = req.body;
+    const { email } = req.body;
     
-    // Validation
+    // Validation - sadece email kontrolü, frontend zaten otomatik dolduruyor
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -292,13 +292,13 @@ router.post('/upgrade-request', authService.authenticateToken, async (req, res) 
       });
     }
 
-    // Create upgrade request
+    // Create upgrade request - sadece email ile
     const upgradeRequest = await upgradeRequestService.createUpgradeRequest(
       req.user.userId,
       {
         email,
-        contactInfo,
-        message
+        contactInfo: null, // Artık kullanılmıyor
+        message: null // Artık kullanılmıyor
       }
     );
 

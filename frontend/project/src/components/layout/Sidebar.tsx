@@ -84,7 +84,7 @@ export function Sidebar({ onNotificationClick }: SidebarProps) {
   }, [navigate]);
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-slate-800 p-4 flex flex-col"> {/* SABİT GENİŞLİK VE RENK */}
+    <div className="flex h-full w-64 flex-col bg-slate-900/80 backdrop-blur-xl border-r border-slate-700/50">
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center">

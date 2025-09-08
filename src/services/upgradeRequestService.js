@@ -170,23 +170,18 @@ class UpgradeRequestService {
             
             const html = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #10b981; margin-bottom: 20px;">New Upgrade Request Received</h2>
+                    <h2 style="color: #10b981; margin-bottom: 20px;">New Upgrade Request</h2>
+                    <p>A request to upgrade to premium features has been submitted by the following user:</p>
                     
                     <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                         <h3 style="margin: 0 0 15px 0; color: #1f2937;">User Information</h3>
-                        <p style="margin: 5px 0;"><strong>Email:</strong> ${user.email}</p>
-                        <p style="margin: 5px 0;"><strong>User ID:</strong> ${user.id}</p>
-                        <p style="margin: 5px 0;"><strong>Current Role:</strong> ${user.role}</p>
-                        <p style="margin: 5px 0;"><strong>Request Date:</strong> ${new Date(upgradeRequest.createdAt).toLocaleString()}</p>
-                    </div>
-
-                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Request Details</h3>
-                        <p style="margin: 5px 0;"><strong>Contact Info:</strong> ${upgradeRequest.contactInfo || 'Not provided'}</p>
-                        <p style="margin: 5px 0;"><strong>Message:</strong></p>
-                        <div style="background: white; padding: 15px; border-radius: 4px; border-left: 4px solid #10b981;">
-                            ${upgradeRequest.message || 'No additional message provided'}
-                        </div>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li style="margin: 5px 0;"><strong>User ID:</strong> ${user.id}</li>
+                            <li style="margin: 5px 0;"><strong>Username:</strong> ${user.email.split('@')[0]}</li>
+                            <li style="margin: 5px 0;"><strong>Email:</strong> ${user.email}</li>
+                            <li style="margin: 5px 0;"><strong>Current Role:</strong> ${user.role}</li>
+                            <li style="margin: 5px 0;"><strong>Request Date:</strong> ${new Date(upgradeRequest.createdAt).toLocaleString()}</li>
+                        </ul>
                     </div>
 
                     <div style="text-align: center; margin-top: 30px;">
