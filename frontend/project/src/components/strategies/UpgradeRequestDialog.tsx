@@ -16,12 +16,19 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
   const { user, token } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState(user?.email || '');
+  const [contactInfo, setContactInfo] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user || !token) {
       toast.error('Authentication error. Please login again.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!email.trim()) {
+      toast.error('Please enter your email address.');
       setIsSubmitting(false);
       return;
     }
@@ -35,7 +42,10 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ 
+        email, 
+        contactInfo: contactInfo.trim() || null 
+      })
       });
 
       const data = await response.json();
@@ -63,15 +73,15 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
             Request Upgrade
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            Confirm your email address to submit a request for premium features.
+            Provide your email and contact information to submit a request for premium features.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* SADECE E-POSTA ALANI */}
+          {/* E-POSTA ALANI */}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-slate-300">
-              Email Address
+              Email Address *
             </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -84,6 +94,26 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
                 className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
               />
             </div>
+          </div>
+
+          {/* İLETİŞİM BİLGİLERİ ALANI */}
+          <div className="space-y-2">
+            <Label htmlFor="contactInfo" className="text-sm font-medium text-slate-300">
+              Contact Information (Optional)
+            </Label>
+            <div className="relative">
+              <Input
+                id="contactInfo"
+                type="text"
+                value={contactInfo}
+                onChange={(e) => setContactInfo(e.target.value)}
+                placeholder="Phone number, Telegram username, or other contact details"
+                className="pl-3 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+              />
+            </div>
+            <p className="text-xs text-slate-400">
+              Provide additional contact information if you'd like us to reach you through other channels.
+            </p>
           </div>
 
           {/* Butonlar */}
@@ -123,6 +153,7 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
           <ul className="text-xs text-slate-400 space-y-1">
             <li>• We'll review your request within 3 business days</li>
             <li>• You'll receive an email confirmation</li>
+            <li>• We'll contact you using the provided information if needed</li>
             <li>• Approved users get full ADMIN access</li>
             <li>• Premium features include strategy creation and automation</li>
           </ul>
