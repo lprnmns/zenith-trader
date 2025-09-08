@@ -18,129 +18,114 @@ export function StrategiesAccessControl({ children }: StrategiesAccessControlPro
     return <>{children}</>;
   }
 
-  // If user is USER, show the locked interface
+  // USER rolü için KİLİTLİ GÖRÜNÜM
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Reduced blur background overlay */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-10" />
+    // 1. Ana Kapsayıcı: İçeriği dikeyde ortalar ve tüm alanı kaplar
+    <div className="flex h-full w-full items-center justify-center p-4">
       
-      {/* Background content (slightly visible) */}
-      <div className="relative z-0 opacity-30">
+      {/* Arka plan olarak bulanık admin içeriği (Bu akıllı bir dokunuş) */}
+      <div className="absolute inset-0 z-0 opacity-10 blur-md">
         {children}
       </div>
 
-      {/* Framed original design at top */}
-      <div className="relative z-20 pt-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Highly visible frame */}
-          <div className="bg-slate-800/95 border-4 border-amber-400/50 rounded-2xl shadow-2xl backdrop-blur-lg p-8">
-            <div className="space-y-8">
-              
-              {/* Lock Icon - Original size but framed */}
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Lock className="w-10 h-10 text-white" />
-              </div>
+      {/* İçerik Kutusu: max-w-3xl -> max-w-2xl olarak küçültüldü */}
+      <div className="relative z-10 w-full max-w-2xl space-y-4 rounded-2xl border-2 border-amber-400/50 bg-slate-800/80 p-6 shadow-2xl backdrop-blur-lg md:p-6">
+        
+        {/* Kilit İkonu ve Başlıklar */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg">
+            <Lock className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Unlock Automated Copy Trading</h1>
+          <p className="max-w-xl text-slate-400">
+            Your current role does not have permission to create and manage automated trading strategies.
+          </p>
+        </div>
 
-              {/* Title - Original */}
-              <h1 className="text-4xl font-bold text-white text-center mb-4">
-                Unlock Automated Copy Trading
-              </h1>
-
-              {/* Description - Original */}
-              <p className="text-slate-400 text-lg text-center mb-8 leading-relaxed max-w-2xl mx-auto">
-                Your current role does not have permission to create and manage automated trading strategies. 
-                To upgrade your access, please submit a request.
-              </p>
-
-              {/* Premium Features - Original design */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-6 text-center">
-                  <Crown className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-                  <h3 className="font-semibold text-white mb-2">Premium Features</h3>
-                  <p className="text-sm text-slate-400">
-                    Create unlimited automated trading strategies
-                  </p>
-                </div>
-                
-                <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-6 text-center">
-                  <Target className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
-                  <h3 className="font-semibold text-white mb-2">Smart Trading</h3>
-                  <p className="text-sm text-slate-400">
-                    Advanced copy trading with AI-powered signals
-                  </p>
-                </div>
-                
-                <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-6 text-center">
-                  <TrendingUp className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-                  <h3 className="font-semibold text-white mb-2">Real Analytics</h3>
-                  <p className="text-sm text-slate-400">
-                    Detailed performance tracking and insights
-                  </p>
-                </div>
-              </div>
-
-              {/* Additional Benefits - Original design */}
-              <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 p-6 rounded-lg border border-emerald-500/30 mb-8">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-lg font-semibold text-emerald-400">Everything You Get</h3>
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-2xl mx-auto">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">Unlimited strategy creation</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">Real-time trade execution</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">Advanced risk management</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">Priority support</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">AI-powered trading signals</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm text-slate-300">Advanced analytics dashboard</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info - Original */}
-              <p className="text-sm text-slate-500 text-center">
-                Request approval typically takes 1-3 business days. 
-                You'll receive email confirmation once your account is upgraded.
-              </p>
+        {/* Özellik Kartları */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {/* Premium Features Kartı */}
+          <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-3 text-center">
+            <Crown className="w-5 h-5 text-amber-400 mx-auto mb-2" />
+            <h3 className="font-semibold text-white mb-1">Premium Features</h3>
+            <p className="text-xs text-slate-400">
+              Create unlimited automated trading strategies
+            </p>
+          </div>
+          
+          {/* Smart Trading Kartı */}
+          <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-3 text-center">
+            <Target className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+            <h3 className="font-semibold text-white mb-1">Smart Trading</h3>
+            <p className="text-xs text-slate-400">
+              Advanced copy trading with AI-powered signals
+            </p>
+          </div>
+          
+          {/* Real Analytics Kartı */}
+          <div className="bg-slate-700/60 border border-slate-600/50 rounded-xl p-3 text-center">
+            <TrendingUp className="w-5 h-5 text-blue-400 mx-auto mb-2" />
+            <h3 className="font-semibold text-white mb-1">Real Analytics</h3>
+            <p className="text-xs text-slate-400">
+              Detailed performance tracking and insights
+            </p>
+          </div>
+        </div>
+        
+        {/* "Everything You Get" Bölümü */}
+        <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 p-3 rounded-lg border border-emerald-500/30">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="w-3 h-3 text-emerald-400" />
+            <h3 className="text-sm font-semibold text-emerald-400">Everything You Get</h3>
+            <Sparkles className="w-3 h-3 text-emerald-400" />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-left max-w-xl mx-auto">
+            <div className="flex items-center gap-1">
+              <Shield className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">Unlimited strategy creation</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Shield className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">Real-time trade execution</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Shield className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">Advanced risk management</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Shield className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">Priority support</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle2 className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">AI-powered trading signals</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle2 className="w-2 h-2 text-emerald-400" />
+              <span className="text-xs text-slate-300">Advanced analytics dashboard</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Sticky Request Button */}
-      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-30">
-        <Button 
-          className="h-12 px-8 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-200"
-          onClick={() => setIsUpgradeDialogOpen(true)}
-        >
-          <Crown className="mr-2 h-4 w-4" />
-          Request Upgrade
-        </Button>
-      </div>
+        {/* Info */}
+        <p className="text-center text-sm text-slate-500">
+          Request approval typically takes 1-3 business days. 
+          You'll receive email confirmation once your account is upgraded.
+        </p>
 
-      {/* Upgrade Request Dialog */}
-      <UpgradeRequestDialog
-        isOpen={isUpgradeDialogOpen}
-        onOpenChange={setIsUpgradeDialogOpen}
-      />
+        {/* Buton (Kutunun içinde) */}
+        <div className="pt-2">
+          <Button
+            className="h-11 w-full bg-gradient-to-r from-emerald-500 to-blue-500 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:shadow-emerald-500/25"
+            onClick={() => setIsUpgradeDialogOpen(true)}
+          >
+            Request Upgrade Access
+          </Button>
+        </div>
+      </div>
+      
+      <UpgradeRequestDialog isOpen={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen} />
     </div>
   );
 }
