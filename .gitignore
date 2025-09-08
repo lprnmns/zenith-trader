@@ -3,3 +3,32 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Test coverage
+coverage/
+*.lcov
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo

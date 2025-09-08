@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { GoogleLoginButton } from './GoogleLoginButton';
 
 const loginSchema = z.object({
-  email: z.string().email('Geçerli bir e‑posta girin'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalı'),
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -34,14 +34,14 @@ export function LoginForm() {
       const result = await login(data.email, data.password);
       
       if (result.success) {
-        toast.success('Giriş başarılı!');
+        toast.success('Login successful!');
         navigate('/dashboard');
       } else {
-        setLoginError(result.error || 'Giriş başarısız');
-        toast.error(result.error || 'Giriş başarısız');
+        setLoginError(result.error || 'Login failed');
+        toast.error(result.error || 'Login failed');
       }
     } catch (error) {
-      const errorMessage = 'Beklenmeyen bir hata oluştu';
+      const errorMessage = 'An unexpected error occurred';
       setLoginError(errorMessage);
       toast.error(errorMessage);
     }
@@ -56,7 +56,7 @@ export function LoginForm() {
           <div className="w-full border-t border-slate-700" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-slate-950 px-3 text-slate-400">Email ile giriş yapın</span>
+          <span className="bg-slate-950 px-3 text-slate-400">Sign in with email</span>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export function LoginForm() {
           disabled={isSubmitting}
           className="w-full h-11 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white"
         >
-          {isSubmitting ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          {isSubmitting ? 'Logging in...' : 'Sign In'}
         </Button>
       </form>
 

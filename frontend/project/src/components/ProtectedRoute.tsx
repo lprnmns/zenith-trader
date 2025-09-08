@@ -19,21 +19,26 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = '/login' }
     isAuthenticated = authStore.isAuthenticated;
     user = authStore.user;
     isAdmin = authStore.isAdmin;
+    console.log('[ProtectedRoute] Check:', { isAuthenticated, userRole: user?.role, isAdmin, requiredRole });
   } catch (error) {
     console.error('ProtectedRoute auth store error:', error);
     return <Navigate to={redirectTo} replace />;
   }
 
   if (!isAuthenticated) {
+    console.log('[ProtectedRoute] Not authenticated, redirecting to:', redirectTo);
     return <Navigate to={redirectTo} replace />;
   }
 
   if (requiredRole === 'ADMIN' && !isAdmin) {
+    console.log('[ProtectedRoute] User not ADMIN, redirecting to /explorer');
     return <Navigate to="/explorer" replace />;
   }
 
+  // Admin users can access all routes, so no need to restrict them from USER routes
   if (requiredRole === 'USER' && user?.role === 'ADMIN') {
-    return <Navigate to="/dashboard" replace />;
+    console.log('[ProtectedRoute] ADMIN accessing USER route - allowing access');
+    return <>{children}</>;
   }
 
   return <>{children}</>;

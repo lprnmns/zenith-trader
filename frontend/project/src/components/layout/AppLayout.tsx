@@ -72,12 +72,10 @@ export function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
-  // Memoized navigation items based on user role
+  // Memoized navigation items - visible to all users
   const navItems = React.useMemo(() => [
-    ...(user?.role === 'ADMIN' ? [
-      { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { path: '/strategies', icon: Target, label: 'My Strategies' },
-    ] : []),
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/strategies', icon: Target, label: 'My Strategies' },
     { path: '/explorer', icon: Search, label: 'Wallet Explorer' },
   ], [user?.role]);
 

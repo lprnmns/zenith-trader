@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface User {
   id: number;
@@ -30,8 +31,9 @@ interface AuthState {
 
 const API_BASE = 'http://localhost:3001/api';
 
-export const useAuthStore = create<AuthState>(
-  (set, get) => ({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -100,6 +102,7 @@ export const useAuthStore = create<AuthState>(
       googleLogin: async (token: string, user: User) => {
         try {
           const isAdmin = user.role === 'ADMIN';
+          
           set({ 
             user, 
             token,
@@ -240,5 +243,15 @@ export const useAuthStore = create<AuthState>(
           return { success: false, error: 'Network error occurred' };
         }
       },
-    })
-  );
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+        isAdmin: state.isAdmin,
+      }),
+    }
+  )
+);

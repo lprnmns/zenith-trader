@@ -10,17 +10,26 @@ const prisma = new PrismaClient();
 const requireAuth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    console.log('[Auth] Token check for:', req.path, 'Token exists:', !!token);
+    console.log('[Auth] Token length:', token?.length || 0);
+    console.log('[Auth] Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
     
     if (!token) {
+      console.log('[Auth] No token provided');
       return res.status(401).json({ 
         error: 'Access denied. No token provided.',
         code: 'NO_TOKEN'
       });
     }
 
+    console.log('[Auth] JWT Secret exists:', !!process.env.JWT_SECRET);
+    console.log('[Auth] JWT Secret length:', process.env.JWT_SECRET?.length || 0);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('[Auth] Token decoded for user:', decoded.userId);
     
     // Find user and verify they exist and are active
+    console.log('[Auth] Looking up user with ID:', decoded.userId);
+    
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -34,6 +43,11 @@ const requireAuth = async (req, res, next) => {
         createdAt: true
       }
     });
+
+    console.log('[Auth] User found:', user ? 'Yes' : 'No');
+    if (user) {
+      console.log('[Auth] User details:', { id: user.id, email: user.email, role: user.role, isActive: user.isActive });
+    }
 
     if (!user) {
       return res.status(401).json({ 
@@ -49,10 +63,14 @@ const requireAuth = async (req, res, next) => {
       });
     }
 
-    // Attach user to request object
-    req.user = user;
+    // Attach user to request object with both id and userId for compatibility
+    req.user = {
+      ...user,
+      userId: user.id  // Add userId alias for compatibility
+    };
     next();
   } catch (error) {
+    console.log('[Auth] JWT verification error:', error.name, error.message);
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ 
         error: 'Invalid token.',
@@ -80,6 +98,8 @@ const requireAuth = async (req, res, next) => {
  * Ensures user has ADMIN role
  */
 const requireAdmin = (req, res, next) => {
+  console.log('[Auth] requireAdmin - User role:', req.user?.role, 'User ID:', req.user?.id);
+  
   if (!req.user) {
     return res.status(401).json({ 
       error: 'Authentication required.',
@@ -88,12 +108,14 @@ const requireAdmin = (req, res, next) => {
   }
 
   if (req.user.role !== 'ADMIN') {
+    console.log('[Auth] requireAdmin - Access denied. User role:', req.user.role, 'Required: ADMIN');
     return res.status(403).json({ 
       error: 'Admin access required.',
       code: 'ADMIN_REQUIRED'
     });
   }
 
+  console.log('[Auth] requireAdmin - Access granted');
   next();
 };
 

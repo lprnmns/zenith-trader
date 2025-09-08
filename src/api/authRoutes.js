@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authService = require('../services/authService');
+const upgradeRequestService = require('../services/upgradeRequestService');
 
 /**
  * POST /api/auth/register
@@ -271,6 +272,81 @@ router.get('/okx-credentials', authService.authenticateToken, async (req, res) =
     res.status(500).json({
       success: false,
       error: 'Failed to fetch OKX credentials'
+    });
+  }
+});
+
+/**
+ * POST /api/auth/upgrade-request
+ * Submit an upgrade request for premium features
+ */
+router.post('/upgrade-request', authService.authenticateToken, async (req, res) => {
+  try {
+    const { email, contactInfo, message } = req.body;
+    
+    // Validation
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    // Create upgrade request
+    const upgradeRequest = await upgradeRequestService.createUpgradeRequest(
+      req.user.userId,
+      {
+        email,
+        contactInfo,
+        message
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'Upgrade request submitted successfully',
+      upgradeRequest: {
+        id: upgradeRequest.id,
+        status: upgradeRequest.status,
+        createdAt: upgradeRequest.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('[Auth API] Upgrade request error:', error);
+    
+    if (error.message === 'You already have a pending upgrade request. Please wait for it to be processed.') {
+      return res.status(409).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to submit upgrade request'
+    });
+  }
+});
+
+/**
+ * GET /api/auth/upgrade-requests
+ * Get current user's upgrade requests
+ */
+router.get('/upgrade-requests', authService.authenticateToken, async (req, res) => {
+  try {
+    const requests = await upgradeRequestService.getUserUpgradeRequests(req.user.userId);
+    
+    res.json({
+      success: true,
+      upgradeRequests: requests
+    });
+
+  } catch (error) {
+    console.error('[Auth API] Get upgrade requests error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch upgrade requests'
     });
   }
 });

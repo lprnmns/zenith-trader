@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,13 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency, formatPercentage, safeNumber } from '@/lib/utils';
-import { Search, ExternalLink, Copy, Star, Shield } from 'lucide-react';
+import { Search, ExternalLink, Copy, Star, Shield, Bell } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSuggestedWallets, getWalletAnalysis } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthStore } from '@/stores/authStore';
 
 export function ExplorerPage() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [walletAddress, setWalletAddress] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
@@ -116,6 +121,18 @@ export function ExplorerPage() {
     } catch {}
   };
 
+  const handleCopyWallet = () => {
+    if (!walletAddress) return;
+    
+    if (user?.role === 'ADMIN') {
+      // Navigate to strategies page with pre-filled wallet address
+      navigate('/strategies?open=true&wallet=' + encodeURIComponent(walletAddress));
+    } else {
+      // Navigate to strategies page (will show locked interface)
+      navigate('/strategies');
+    }
+  };
+
   const filteredAndSorted = useMemo(() => {
     const list = suggested as any[];
     const byKey = (w: any) => {
@@ -132,14 +149,17 @@ export function ExplorerPage() {
     return [...list].sort((a, b) => (byKey(b) as number) - (byKey(a) as number));
   }, [suggested, sortBy]);
 
-  // Summary - Direct calculations from state
-  const totalPnL = performanceData.length > 0 
-    ? safeNumber(performanceData[performanceData.length - 1]?.value ?? 0) 
-    : 0;
+  // Summary - Use comprehensive PnL from backend
+  const totalPnL = safeNumber(summary?.totalPnl ?? 
+    (performanceData.length > 0 ? performanceData[performanceData.length - 1]?.value ?? 0 : 0)
+  );
+  const realizedPnL = safeNumber(summary?.realizedPnl ?? 0);
+  const unrealizedPnL = safeNumber(summary?.unrealizedPnl ?? 0);
   
   const winRate = safeNumber(summary?.winRatePercent ?? 0);
   const totalTradesCount = safeNumber(summary?.totalTrades ?? 0);
   const avgTradeSize = safeNumber(summary?.avgTradeSizeUsd ?? 0);
+  const openPositions = safeNumber(summary?.openPositions ?? 0);
   
   // Debug logging
   React.useEffect(() => {
@@ -291,31 +311,42 @@ export function ExplorerPage() {
 
       {hasAnalyzed && !isAnalyzing && (
         <>
-          {/* Metrics Cards - Force re-render with keys */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" key={`metrics-${walletAddress}-${Date.now()}`}>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`pnl-${totalPnL}`}>
-              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total PnL (Cumulative)</CardTitle></CardHeader>
+          {/* Metrics Cards - Show comprehensive PnL breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8" key={`metrics-${walletAddress}-${Date.now()}`}>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`total-pnl-${totalPnL}`}>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total PnL (Live)</CardTitle></CardHeader>
               <CardContent>
                 <div className={`text-2xl font-bold mb-1 ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {formatCurrency(totalPnL)}
                 </div>
                 <p className="text-xs text-slate-400">
-                  {performanceData.length > 0 ? `From ${performanceData.length} data points` : 'No data'}
+                  Realized + Unrealized
                 </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`realized-${realizedPnL}`}>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Realized PnL</CardTitle></CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold mb-1 ${realizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(realizedPnL)}
+                </div>
+                <p className="text-xs text-slate-400">From closed positions</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`unrealized-${unrealizedPnL}`}>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Unrealized PnL</CardTitle></CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold mb-1 ${unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(unrealizedPnL)}
+                </div>
+                <p className="text-xs text-slate-400">{openPositions} open positions</p>
               </CardContent>
             </Card>
             <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`winrate-${winRate}`}>
               <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Win Rate</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white mb-1">{formatPercentage(winRate).replace('+','')}</div>
-                <p className="text-xs text-slate-400">Over realized sales</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`trades-${totalTradesCount}`}>
-              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-400">Total Trades</CardTitle></CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white mb-1">{totalTradesCount}</div>
-                <p className="text-xs text-slate-400">Realized (SELL) trades</p>
+                <p className="text-xs text-slate-400">{totalTradesCount} closed trades</p>
               </CardContent>
             </Card>
             <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50" key={`avgsize-${avgTradeSize}`}>
@@ -327,16 +358,31 @@ export function ExplorerPage() {
             </Card>
           </div>
 
-          {/* Cumulative PnL Chart */}
+          {/* Portfolio Value Chart */}
           <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Cumulative PnL</CardTitle>
-                {performanceData.length > 0 && (
-                  <span className="text-sm text-slate-400">
-                    {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-white">Portfolio Value (Realized + Unrealized)</CardTitle>
+                  <NotificationBell walletAddress={walletAddress} />
+                </div>
+                <div className="flex items-center gap-3">
+                  {walletAddress && (
+                    <Button
+                      onClick={handleCopyWallet}
+                      size="sm"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                  )}
+                  {performanceData.length > 0 && (
+                    <span className="text-sm text-slate-400">
+                      {performanceData[0]?.date} - {performanceData[performanceData.length - 1]?.date}
+                    </span>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>

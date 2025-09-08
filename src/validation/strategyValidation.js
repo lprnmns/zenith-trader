@@ -1,0 +1,132 @@
+const { z } = require('zod');
+
+// Strategy form validation schema
+const strategyFormSchema = z.object({
+  id: z.number().optional(),
+  name: z.string().min(1, 'Strategy name is required').max(100, 'Name too long'),
+  description: z.string().max(500, 'Description too long').optional(),
+  exchange: z.enum(['OKX', 'Binance', 'Bybit'], {
+    errorMap: () => ({ message: 'Invalid exchange' })
+  }),
+  copyMode: z.enum(['MIRROR', 'SCALE', 'FIXED'], {
+    errorMap: () => ({ message: 'Invalid copy mode' })
+  }),
+  riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH'], {
+    errorMap: () => ({ message: 'Invalid risk level' })
+  }),
+  isActive: z.boolean().default(true),
+  userId: z.number().positive('Invalid user ID'),
+  
+  // Trading configuration
+  positionSize: z.number().min(1, 'Position size must be at least 1').max(1000000, 'Position size too large'),
+  leverage: z.number().min(1, 'Leverage must be at least 1').max(125, 'Leverage too high'),
+  stopLoss: z.number().min(0, 'Stop loss must be non-negative').max(100, 'Stop loss too high').optional(),
+  takeProfit: z.number().min(0, 'Take profit must be non-negative').max(100, 'Take profit too high').optional(),
+  
+  // Performance tracking
+  currentPnL: z.number().default(0),
+  totalPnL: z.number().default(0),
+  tradesCount: z.number().min(0, 'Trades count must be non-negative').default(0),
+  winRate: z.number().min(0).max(100).default(0),
+  
+  // Copy trading settings
+  amountPerTrade: z.number().min(1, 'Amount per trade must be at least 1').optional(),
+  percentageToCopy: z.number().min(1, 'Percentage must be at least 1').max(100, 'Percentage too high').optional(),
+  dailyLimit: z.number().min(1, 'Daily limit must be at least 1').optional(),
+  
+  // Token restrictions
+  allowedTokens: z.array(z.string().regex(/^[A-Z]{2,10}$/, 'Invalid token symbol')).default([]),
+  blockedTokens: z.array(z.string().regex(/^[A-Z]{2,10}$/, 'Invalid token symbol')).default([]),
+  
+  // Futures configuration
+  futuresMode: z.enum(['HEDGE', 'ONE_WAY']).optional(),
+  marginMode: z.enum(['CROSS', 'ISOLATED']).optional(),
+  
+  // Time settings
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Strategy update validation schema (all fields optional)
+const strategyUpdateSchema = strategyFormSchema.partial();
+
+// Strategy execution validation schema
+const executionFormSchema = z.object({
+  id: z.number().optional(),
+  strategyId: z.number().positive('Invalid strategy ID'),
+  
+  // Trade details
+  signalId: z.string().optional(),
+  action: z.enum(['BUY', 'SELL'], {
+    errorMap: () => ({ message: 'Invalid action' })
+  }),
+  token: z.string().regex(/^[A-Z]{2,10}$/, 'Invalid token symbol'),
+  amount: z.number().min(0.00000001, 'Amount too small'),
+  price: z.number().min(0, 'Price must be non-negative').optional(),
+  
+  // Execution details
+  executedPrice: z.number().min(0, 'Executed price must be non-negative').optional(),
+  executedAmount: z.number().min(0, 'Executed amount must be non-negative').optional(),
+  status: z.enum(['PENDING', 'EXECUTED', 'FAILED', 'CANCELLED']).default('PENDING'),
+  
+  // Financial details
+  fee: z.number().min(0, 'Fee must be non-negative').default(0),
+  pnl: z.number().default(0),
+  
+  // Timing
+  timestamp: z.date().default(() => new Date()),
+  executionTime: z.number().min(0, 'Execution time must be non-negative').optional(),
+  
+  // Metadata
+  exchange: z.enum(['OKX', 'Binance', 'Bybit']).optional(),
+  orderId: z.string().optional(),
+  error: z.string().optional(),
+});
+
+// Audit log validation schema
+const auditLogSchema = z.object({
+  id: z.number().optional(),
+  userId: z.number().positive('Invalid user ID').optional(),
+  action: z.string().min(1, 'Action is required'),
+  entityType: z.string().min(1, 'Entity type is required'),
+  entityId: z.number().positive('Invalid entity ID'),
+  
+  // Details
+  oldValue: z.any().optional(),
+  newValue: z.any().optional(),
+  metadata: z.any().optional(),
+  
+  // Context
+  ipAddress: z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/, 'Invalid IP address').optional(),
+  userAgent: z.string().max(500, 'User agent too long').optional(),
+  
+  // Timing
+  timestamp: z.date().default(() => new Date()),
+});
+
+// Validation functions
+const validateStrategyForm = (data) => {
+  return strategyFormSchema.safeParse(data);
+};
+
+const validateStrategyUpdate = (data) => {
+  return strategyUpdateSchema.safeParse(data);
+};
+
+const validateExecutionForm = (data) => {
+  return executionFormSchema.safeParse(data);
+};
+
+const validateAuditLog = (data) => {
+  return auditLogSchema.safeParse(data);
+};
+
+module.exports = {
+  validateStrategyForm,
+  validateStrategyUpdate,
+  validateExecutionForm,
+  validateAuditLog,
+  strategyFormSchema,
+  executionFormSchema,
+  auditLogSchema
+};

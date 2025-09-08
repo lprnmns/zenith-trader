@@ -1,0 +1,235 @@
+const { validateStrategyForm, validateExecutionForm, validateAuditLog } = require('../validation/strategyValidation');
+
+class StrategyValidationError extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = 'StrategyValidationError';
+    this.details = details;
+    this.statusCode = 400;
+  }
+}
+
+class StrategyExecutionValidationError extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = 'StrategyExecutionValidationError';
+    this.details = details;
+    this.statusCode = 400;
+  }
+}
+
+class AuditLogValidationError extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = 'AuditLogValidationError';
+    this.details = details;
+    this.statusCode = 400;
+  }
+}
+
+// Strategy validation middleware
+const validateStrategy = (req, res, next) => {
+  try {
+    // Transform request body to match Zod schema expectations
+    const strategyData = {
+      ...req.body,
+      // Convert string ID to number if present
+      id: req.body.id ? parseInt(req.body.id) : undefined,
+      // Convert userId to number
+      userId: parseInt(req.body.userId) || req.user?.id,
+      // Ensure arrays are properly formatted
+      allowedTokens: Array.isArray(req.body.allowedTokens) ? req.body.allowedTokens : [],
+      // Convert numeric fields
+      positionSize: parseFloat(req.body.positionSize) || 100,
+      leverage: parseInt(req.body.leverage) || 5,
+      currentPnL: parseFloat(req.body.currentPnL) || 0,
+      totalPnL: parseFloat(req.body.totalPnL) || 0,
+      tradesCount: parseInt(req.body.tradesCount) || 0,
+      amountPerTrade: req.body.amountPerTrade ? parseFloat(req.body.amountPerTrade) : undefined,
+      percentageToCopy: req.body.percentageToCopy ? parseFloat(req.body.percentageToCopy) : undefined,
+      stopLoss: req.body.stopLoss ? parseFloat(req.body.stopLoss) : undefined,
+      dailyLimit: req.body.dailyLimit ? parseInt(req.body.dailyLimit) : undefined,
+      // Convert boolean
+      isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+    };
+
+    // Validate using Zod schema
+    const result = validateStrategyForm(strategyData);
+    
+    if (!result.success) {
+      const error = new StrategyValidationError('Strategy validation failed', result.error.errors);
+      return next(error);
+    }
+
+    // Attach validated data to request
+    req.validatedData = result.data;
+    next();
+  } catch (error) {
+    next(new StrategyValidationError('Strategy validation error', error.message));
+  }
+};
+
+// Strategy update validation middleware
+const validateStrategyUpdate = (req, res, next) => {
+  try {
+    // Transform request body to match Zod schema expectations
+    const updateData = {
+      ...req.body,
+      // Convert numeric fields if present
+      positionSize: req.body.positionSize ? parseFloat(req.body.positionSize) : undefined,
+      leverage: req.body.leverage ? parseInt(req.body.leverage) : undefined,
+      currentPnL: req.body.currentPnL ? parseFloat(req.body.currentPnL) : undefined,
+      totalPnL: req.body.totalPnL ? parseFloat(req.body.totalPnL) : undefined,
+      tradesCount: req.body.tradesCount ? parseInt(req.body.tradesCount) : undefined,
+      amountPerTrade: req.body.amountPerTrade ? parseFloat(req.body.amountPerTrade) : undefined,
+      percentageToCopy: req.body.percentageToCopy ? parseFloat(req.body.percentageToCopy) : undefined,
+      stopLoss: req.body.stopLoss ? parseFloat(req.body.stopLoss) : undefined,
+      dailyLimit: req.body.dailyLimit ? parseInt(req.body.dailyLimit) : undefined,
+      // Convert boolean if present
+      isActive: req.body.isActive !== undefined ? req.body.isActive : undefined,
+      // Ensure arrays are properly formatted
+      allowedTokens: Array.isArray(req.body.allowedTokens) ? req.body.allowedTokens : undefined,
+    };
+
+    // Remove undefined values
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    // Validate using Zod schema
+    const result = require('../validation/strategyValidation').validateStrategyUpdate(updateData);
+    
+    if (!result.success) {
+      const error = new StrategyValidationError('Strategy update validation failed', result.error.errors);
+      return next(error);
+    }
+
+    // Attach validated data to request
+    req.validatedData = result.data;
+    next();
+  } catch (error) {
+    next(new StrategyValidationError('Strategy update validation error', error.message));
+  }
+};
+
+// Strategy execution validation middleware
+const validateStrategyExecution = (req, res, next) => {
+  try {
+    // Transform request body to match Zod schema expectations
+    const executionData = {
+      ...req.body,
+      // Convert numeric fields
+      strategyId: parseInt(req.body.strategyId),
+      amount: req.body.amount ? parseFloat(req.body.amount) : undefined,
+      price: req.body.price ? parseFloat(req.body.price) : undefined,
+      executedPrice: req.body.executedPrice ? parseFloat(req.body.executedPrice) : undefined,
+      executedAmount: req.body.executedAmount ? parseFloat(req.body.executedAmount) : undefined,
+      fee: req.body.fee ? parseFloat(req.body.fee) : undefined,
+      pnl: req.body.pnl ? parseFloat(req.body.pnl) : undefined,
+      executionTime: req.body.executionTime ? parseInt(req.body.executionTime) : undefined,
+      // Convert timestamp
+      timestamp: req.body.timestamp ? new Date(req.body.timestamp) : new Date(),
+    };
+
+    // Validate using Zod schema
+    const result = validateExecutionForm(executionData);
+    
+    if (!result.success) {
+      const error = new StrategyExecutionValidationError('Strategy execution validation failed', result.error.errors);
+      return next(error);
+    }
+
+    // Attach validated data to request
+    req.validatedData = result.data;
+    next();
+  } catch (error) {
+    next(new StrategyExecutionValidationError('Strategy execution validation error', error.message));
+  }
+};
+
+// Audit log validation middleware (function already imported)
+const validateAuditLogMiddleware = (req, res, next) => {
+  try {
+    // Transform request body to match Zod schema expectations
+    const auditData = {
+      ...req.body,
+      // Convert numeric fields
+      entityId: parseInt(req.body.entityId),
+      userId: req.body.userId ? parseInt(req.body.userId) : undefined,
+      // Convert timestamp
+      timestamp: req.body.timestamp ? new Date(req.body.timestamp) : new Date(),
+    };
+
+    // Validate using Zod schema
+    const result = validateAuditLog(auditData);
+    
+    if (!result.success) {
+      const error = new AuditLogValidationError('Audit log validation failed', result.error.errors);
+      return next(error);
+    }
+
+    // Attach validated data to request
+    req.validatedData = result.data;
+    next();
+  } catch (error) {
+    next(new AuditLogValidationError('Audit log validation error', error.message));
+  }
+};
+
+// Error handling middleware for validation errors
+const handleValidationErrors = (err, req, res, next) => {
+  if (err instanceof StrategyValidationError || 
+      err instanceof StrategyExecutionValidationError || 
+      err instanceof AuditLogValidationError) {
+    
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.name,
+      message: err.message,
+      details: err.details
+    });
+  }
+  
+  // Pass to next error handler
+  next(err);
+};
+
+// Helper function to extract validation error details
+const extractValidationErrorDetails = (zodError) => {
+  return zodError.errors.map(error => ({
+    field: error.path.join('.'),
+    message: error.message,
+    code: error.code
+  }));
+};
+
+// Utility functions for common validations
+const validateWalletAddress = (address) => {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+};
+
+const validateTokenSymbol = (symbol) => {
+  return /^[A-Z]{2,10}$/.test(symbol);
+};
+
+const validateExchange = (exchange) => {
+  return ['OKX', 'Binance', 'Bybit'].includes(exchange);
+};
+
+const validateCopyMode = (mode) => {
+  return ['Perpetual', 'Spot'].includes(mode);
+};
+
+module.exports = {
+  validateStrategy,
+  validateStrategyUpdate,
+  validateStrategyExecution,
+  validateAuditLog: validateAuditLogMiddleware,
+  handleValidationErrors,
+  extractValidationErrorDetails,
+  StrategyValidationError,
+  StrategyExecutionValidationError,
+  AuditLogValidationError,
+  validateWalletAddress,
+  validateTokenSymbol,
+  validateExchange,
+  validateCopyMode
+};

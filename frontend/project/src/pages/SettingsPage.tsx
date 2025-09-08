@@ -9,8 +9,8 @@ export const SettingsPage: React.FC = () => {
       <div className="flex items-center space-x-3">
         <Settings className="h-8 w-8" />
         <div>
-          <h1 className="text-3xl font-bold">Ayarlar</h1>
-          <p className="text-gray-600">Uygulama tercihlerinizi yönetin</p>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-gray-600">Manage your application preferences</p>
         </div>
       </div>
 
@@ -25,34 +25,34 @@ export const SettingsPage: React.FC = () => {
           <CardHeader>
             <div className="flex items-center space-x-2">
               <Smartphone className="h-5 w-5" />
-              <CardTitle>Mobil Uygulama</CardTitle>
+              <CardTitle>Mobile App</CardTitle>
             </div>
             <CardDescription>
-              Progressive Web App özellikleri
+              Progressive Web App features
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="rounded-lg border border-green-200 bg-green-50 p-3">
               <div className="text-sm text-green-800">
-                ✅ <strong>Offline Erişim</strong>
+                ✅ <strong>Offline Access</strong>
                 <br />
-                İnternet olmadan da uygulamayı kullanabilirsiniz
+                You can use the app without internet connection
               </div>
             </div>
             
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
               <div className="text-sm text-blue-800">
-                📱 <strong>Ana Ekran Kısayolu</strong>
+                📱 <strong>Home Screen Shortcut</strong>
                 <br />
-                Uygulamayı telefonunuzun ana ekranına ekleyebilirsiniz
+                You can add the app to your phone's home screen
               </div>
             </div>
             
             <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
               <div className="text-sm text-purple-800">
-                ⚡ <strong>Hızlı Yükleme</strong>
+                ⚡ <strong>Fast Loading</strong>
                 <br />
-                Gelişmiş önbellekleme ile hızlı performans
+                Fast performance with advanced caching
               </div>
             </div>
           </CardContent>
@@ -61,18 +61,18 @@ export const SettingsPage: React.FC = () => {
         {/* App Info */}
         <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader>
-            <CardTitle>Uygulama Bilgisi</CardTitle>
+            <CardTitle>App Information</CardTitle>
             <CardDescription>
-              Zenith Trader hakkında
+              About Zenith Trader
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm space-y-2">
               <div>
-                <strong>Versiyon:</strong> 1.0.0-beta
+                <strong>Version:</strong> 1.0.0-beta
               </div>
               <div>
-                <strong>Son Güncelleme:</strong> {new Date().toLocaleDateString('tr-TR')}
+                <strong>Last Update:</strong> {new Date().toLocaleDateString('en-US')}
               </div>
               <div>
                 <strong>Platform:</strong> Progressive Web App
@@ -81,10 +81,10 @@ export const SettingsPage: React.FC = () => {
             
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <div className="text-sm text-gray-600">
-                🚀 <strong>Beta Sürümü</strong>
+                🚀 <strong>Beta Version</strong>
                 <br />
-                Bu uygulamanın test sürümünü kullanıyorsunuz.
-                Geri bildirimleriniz değerlidir!
+                You are using the test version of this app.
+                Your feedback is valuable!
               </div>
             </div>
           </CardContent>
@@ -95,10 +95,10 @@ export const SettingsPage: React.FC = () => {
           <CardHeader>
             <div className="flex items-center space-x-2">
               <Bell className="h-5 w-5" />
-              <CardTitle>Bildirim Türleri</CardTitle>
+              <CardTitle>Notification Types</CardTitle>
             </div>
             <CardDescription>
-              Hangi durumlarda bildirim alacaksınız
+              When you will receive notifications
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -106,9 +106,9 @@ export const SettingsPage: React.FC = () => {
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🟢</div>
-                  <div className="font-semibold text-green-800">Pozisyon Açılması</div>
+                  <div className="font-semibold text-green-800">Position Opening</div>
                   <div className="text-sm text-green-600 mt-1">
-                    Takip ettiğiniz trader yeni bir pozisyon açtığında
+                    When the trader you follow opens a new position
                   </div>
                 </div>
               </div>
@@ -116,9 +116,9 @@ export const SettingsPage: React.FC = () => {
               <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🟡</div>
-                  <div className="font-semibold text-yellow-800">Kısmi Kapanma</div>
+                  <div className="font-semibold text-yellow-800">Partial Closure</div>
                   <div className="text-sm text-yellow-600 mt-1">
-                    Pozisyonun bir kısmı kar realization için kapatıldığında
+                    When a portion of the position is closed for profit realization
                   </div>
                 </div>
               </div>
@@ -126,9 +126,9 @@ export const SettingsPage: React.FC = () => {
               <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🔴</div>
-                  <div className="font-semibold text-red-800">Pozisyon Kapanması</div>
+                  <div className="font-semibold text-red-800">Position Closure</div>
                   <div className="text-sm text-red-600 mt-1">
-                    Pozisyon tamamen kapatıldığında (kar/zarar realization)
+                    When the position is completely closed (profit/loss realization)
                   </div>
                 </div>
               </div>

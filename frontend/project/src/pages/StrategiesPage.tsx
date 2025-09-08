@@ -5,16 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useStrategiesStore } from '@/stores/strategiesStore';
 import { getStrategyTrades } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import StrategyWizard from '@/components/strategies/StrategyWizard';
+import QuickStrategyDialog from '@/components/strategies/QuickStrategyDialog';
+import { StrategiesAccessControl } from '@/components/strategies/StrategiesAccessControl';
 import { formatCurrency, safeNumber } from '@/lib/utils';
 import { Plus, Edit, Trash2, Power, PowerOff, ExternalLink } from 'lucide-react';
 
 export function StrategiesPage() {
   const { strategies, updateStrategy, deleteStrategy, recentTrades, fetchStrategies, isLoading } = useStrategiesStore();
     const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isQuickStrategyOpen, setIsQuickStrategyOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const openStrategyId = searchParams.get('open');
 
@@ -65,7 +69,8 @@ export function StrategiesPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <StrategiesAccessControl>
+      <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">My Strategies</h1>
@@ -73,11 +78,18 @@ export function StrategiesPage() {
         </div>
         <div className="flex gap-2">
           <Button 
+            onClick={() => setIsQuickStrategyOpen(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Quick Strategy
+          </Button>
+          <Button 
             onClick={() => setIsWizardOpen(true)}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Yeni Strateji Oluştur
+            Create New Strategy
           </Button>
         </div>
       </div>
@@ -91,7 +103,7 @@ export function StrategiesPage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">No strategies yet</h3>
               <p className="text-slate-400 mb-6">
-                İlk kopya ticaret stratejinizi oluşturarak başlayın
+                Create your first copy trading strategy to get started
               </p>
               <div className="flex gap-2 justify-center">
                   <Button 
@@ -99,7 +111,7 @@ export function StrategiesPage() {
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     <Plus className="w-5 h-5 mr-2" />
-                    Yeni Strateji Oluştur
+                    Create New Strategy
                   </Button>
                 </div>
             </div>
@@ -295,14 +307,45 @@ export function StrategiesPage() {
         </Accordion>
       )}
 
-      <StrategyWizard
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        onSuccess={(strategy) => {
-          fetchStrategies();
-          setIsWizardOpen(false);
-        }}
-      />
-    </div>
+      <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-gray-900 border-gray-700 [&_[data-state=open]>svg]:text-white [&_[data-state=closed]>svg]:text-white [&_[data-state=open]]:bg-gray-800 [&_[data-state=closed]]:bg-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">Create Strategy</DialogTitle>
+            <DialogDescription className="text-sm text-gray-400">
+              Create a new copy trading strategy
+            </DialogDescription>
+          </DialogHeader>
+          <StrategyWizard
+            isOpen={isWizardOpen}
+            onClose={() => setIsWizardOpen(false)}
+            onSuccess={(strategy) => {
+              fetchStrategies();
+              setIsWizardOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Strategy Dialog */}
+      <Dialog open={isQuickStrategyOpen} onOpenChange={setIsQuickStrategyOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] bg-gray-900 border-gray-700 p-6 [&_[data-state=open]>svg]:text-white [&_[data-state=closed]>svg]:text-white [&_[data-state=open]]:bg-gray-800 [&_[data-state=closed]]:bg-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">Create Quick Strategy</DialogTitle>
+            <DialogDescription className="text-sm text-gray-400">
+              Quickly create a copy trading strategy by entering only the wallet address
+            </DialogDescription>
+          </DialogHeader>
+          <QuickStrategyDialog
+            isOpen={isQuickStrategyOpen}
+            onClose={() => setIsQuickStrategyOpen(false)}
+            onSuccess={(strategy) => {
+              fetchStrategies();
+              setIsQuickStrategyOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+      </div>
+    </StrategiesAccessControl>
   );
 }

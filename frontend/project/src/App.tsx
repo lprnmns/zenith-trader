@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingState } from './components/AsyncState';
@@ -28,7 +28,13 @@ import { AuthPage } from './pages/AuthPage';
 import { notificationService } from './services/notificationService';
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Role-based default route
+  const defaultRoute = useMemo(() => {
+    if (!isAuthenticated || !user) return '/dashboard';
+    return user.role === 'ADMIN' ? '/dashboard' : '/explorer';
+  }, [isAuthenticated, user]);
 
   const initializeNotifications = useCallback(async () => {
     try {
@@ -94,11 +100,11 @@ function App() {
         <Routes>
             <Route
               path="/login"
-              element={!isAuthenticated ? <AuthPage initial="login" /> : <Navigate to="/dashboard" replace />}
+              element={!isAuthenticated ? <AuthPage initial="login" /> : <Navigate to={defaultRoute} replace />}
             />
             <Route
               path="/register"
-              element={!isAuthenticated ? <AuthPage initial="register" /> : <Navigate to="/dashboard" replace />}
+              element={!isAuthenticated ? <AuthPage initial="register" /> : <Navigate to={defaultRoute} replace />}
             />
             <Route path="/auth/success" element={<OAuthSuccessPage />} />
             <Route path="/auth/error" element={<OAuthErrorPage />} />
@@ -111,12 +117,12 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route index element={<Navigate to={defaultRoute} replace />} />
               <Route 
                 path="dashboard" 
                 element={
                   <ErrorBoundary>
-                    <ProtectedRoute requiredRole="ADMIN">
+                    <ProtectedRoute>
                       <DashboardPage />
                     </ProtectedRoute>
                   </ErrorBoundary>
@@ -126,7 +132,7 @@ function App() {
                 path="strategies" 
                 element={
                   <ErrorBoundary>
-                    <ProtectedRoute requiredRole="ADMIN">
+                    <ProtectedRoute>
                       <StrategiesPage />
                     </ProtectedRoute>
                   </ErrorBoundary>
@@ -136,7 +142,7 @@ function App() {
                 path="explorer" 
                 element={
                   <ErrorBoundary>
-                    <ProtectedRoute requiredRole="USER">
+                    <ProtectedRoute>
                       <ExplorerPage />
                     </ProtectedRoute>
                   </ErrorBoundary>

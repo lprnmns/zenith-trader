@@ -36,6 +36,8 @@ model User {
   walletNotifications UserWalletNotification[]
   subscription       UserSubscription?
   pushSubscriptions PushSubscription[]
+  walletSubscriptions WalletSubscription[]
+  upgradeRequests   UpgradeRequest[]
 
   @@index([googleId])
   @@index([googleEmail])
@@ -375,4 +377,38 @@ model PushSubscription {
   @@index([userId])
   @@index([isActive])
   @@map("push_subscriptions")
+}
+
+model WalletSubscription {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  walletAddress String
+  subscription  String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, walletAddress])
+  @@index([walletAddress])
+  @@map("wallet_subscriptions")
+}
+
+model UpgradeRequest {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  email         String
+  contactInfo   String?
+  message       String?
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminNotes    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@map("upgrade_requests")
 }

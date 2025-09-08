@@ -195,6 +195,58 @@ class NotificationService {
     }
   }
 
+  // Trade bildirimi gönder
+  async sendTradeNotification(userId, strategyName, tradeData, action) {
+    try {
+      // Kullanıcının subscription'ını kontrol et
+      const hasSubscription = await this.hasSubscription(userId);
+      if (!hasSubscription) {
+        console.log(`⚠️ User ${userId} için subscription bulunamadı`);
+        return false;
+      }
+
+      // Bildirim içeriği
+      const notification = {
+        title: `📈 ${strategyName}: ${tradeData.type === 'BUY' ? 'Alış' : 'Satış'}`,
+        body: `${tradeData.token} - ${tradeData.amount} kontrat @ $${tradeData.price}`,
+        data: {
+          type: 'trade_execution',
+          strategy: strategyName,
+          trade: {
+            token: tradeData.token,
+            amount: tradeData.amount,
+            price: tradeData.price,
+            type: tradeData.type,
+            action: action,
+            orderId: tradeData.id,
+            timestamp: new Date().toISOString()
+          }
+        },
+        requireInteraction: false,
+        actions: [
+          {
+            action: 'view_trade',
+            title: 'İşlemi Gör'
+          },
+          {
+            action: 'dismiss',
+            title: 'Kapat'
+          }
+        ]
+      };
+
+      const success = await this.sendNotification(userId, notification);
+      if (success) {
+        console.log(`✅ Trade bildirimi gönderildi: User ${userId} - ${tradeData.token} ${tradeData.type}`);
+      }
+      return success;
+
+    } catch (error) {
+      console.error(`❌ Trade bildirimi hatası (User ${userId}):`, error.message);
+      return false;
+    }
+  }
+
   // Copy trading bildirimi gönder
   async sendCopyTradingNotification(signal, tradeResult) {
     try {
