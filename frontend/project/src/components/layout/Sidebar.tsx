@@ -119,8 +119,11 @@ export function Sidebar({ onNotificationClick }: SidebarProps) {
         </Button>
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10"
-          onClick={onNotificationClick}
+          className={cn(
+            "w-full justify-start gap-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10",
+            location.pathname === '/notifications' && "bg-blue-500/20 text-blue-400 hover:text-blue-400"
+          )}
+          onClick={() => handleNavigation('/notifications')}
         >
           <Bell className="w-5 h-5" />
           Notifications

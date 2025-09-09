@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useEffect, useCallback, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingState } from './components/AsyncState';
@@ -15,6 +15,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardPage } from './pages/DashboardPage';
 import { StrategiesPage } from './pages/StrategiesPage';
 import { ExplorerPage } from './pages/ExplorerPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 import { OAuthSuccessPage } from './pages/OAuthSuccessPage';
 import { OAuthErrorPage } from './pages/OAuthErrorPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
@@ -144,6 +145,16 @@ function App() {
                   <ErrorBoundary>
                     <ProtectedRoute>
                       <ExplorerPage />
+                    </ProtectedRoute>
+                  </ErrorBoundary>
+                } 
+              />
+              <Route 
+                path="notifications" 
+                element={
+                  <ErrorBoundary>
+                    <ProtectedRoute>
+                      <NotificationsPage />
                     </ProtectedRoute>
                   </ErrorBoundary>
                 } 

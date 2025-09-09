@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Bell, BellOff, BellRing, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from 'sonner';
@@ -22,7 +22,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
     
     try {
       console.log('[NotificationBell] Checking subscription for:', walletAddress);
-      console.log('[NotificationBell] Using token from auth store, length:', token.length);
       
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/check`, {
         method: 'POST',
@@ -176,9 +175,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
           setIsSubscribed(true);
           
           if (pushEnabled) {
-            toast.success(`Push notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+            toast.success(`🔔 Push notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
           } else {
-            toast.success(`Browser notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+            toast.success(`🔔 Browser notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
           }
           
           // Show test notification
@@ -209,7 +208,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
 
         if (response.ok) {
           setIsSubscribed(false);
-          toast.success('Notifications disabled');
+          toast.success('🔕 Notifications disabled');
         }
       }
     } catch (error) {
@@ -254,23 +253,51 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
     return outputArray;
   };
 
+  // Modern button styling with enhanced visual feedback
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggleNotification}
-      disabled={isLoading}
-      className="relative text-slate-400 hover:text-white hover:bg-slate-700/50 z-50"
-      title={isSubscribed ? "Disable notifications" : "Enable notifications"}
-    >
-      {isSubscribed ? (
-        <Bell className="h-4 w-4 text-emerald-400" />
-      ) : (
-        <BellOff className="h-4 w-4" />
-      )}
-      {isSubscribed && (
-        <span className="absolute top-0 right-0 h-2 w-2 bg-green-500 rounded-full animate-pulse z-51" />
-      )}
-    </Button>
+    <div className="relative">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={toggleNotification}
+        disabled={isLoading || !user}
+        className={`
+          relative h-9 px-3 rounded-lg border transition-all duration-200 
+          ${isSubscribed 
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50' 
+            : 'bg-slate-700/30 border-slate-600/50 text-slate-400 hover:bg-slate-700/50 hover:border-slate-500/70 hover:text-slate-300'
+          }
+          ${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}
+          shadow-sm hover:shadow-md
+        `}
+        title={
+          !user 
+            ? "Please login to enable notifications" 
+            : isLoading 
+              ? "Processing..." 
+              : isSubscribed 
+                ? "Notifications enabled - Click to disable" 
+                : "Click to enable wallet notifications"
+        }
+      >
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : isSubscribed ? (
+            <BellRing className="h-4 w-4" />
+          ) : (
+            <BellOff className="h-4 w-4" />
+          )}
+          <span className="text-sm font-medium">
+            {isLoading ? 'Processing...' : isSubscribed ? 'Notifications On' : 'Enable Notifications'}
+          </span>
+        </div>
+        
+        {/* Active indicator dot */}
+        {isSubscribed && !isLoading && (
+          <div className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" />
+        )}
+      </Button>
+    </div>
   );
 };
