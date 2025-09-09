@@ -24,7 +24,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
       console.log('[NotificationBell] Checking subscription for:', walletAddress);
       console.log('[NotificationBell] Using token from auth store, length:', token.length);
       
-      const response = await fetch('http://localhost:3001/notifications/check', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/check`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
       
       // Get VAPID public key from server
       console.log('[NotificationBell] Fetching VAPID key...');
-      const response = await fetch('http://localhost:3001/notifications/vapid-key');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/vapid-public-key`);
       const { publicKey } = await response.json();
       
       if (!publicKey) {
@@ -159,7 +159,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
 
         // Save subscription to server
         console.log('[NotificationBell] Saving subscription to server...');
-        const response = await fetch('http://localhost:3001/notifications/subscribe', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
       } else {
         // Unsubscribe
         console.log('[NotificationBell] Unsubscribing...');
-        const response = await fetch('http://localhost:3001/notifications/unsubscribe', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/unsubscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

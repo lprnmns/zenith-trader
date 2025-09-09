@@ -37,7 +37,11 @@
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
       "Bash(npm uninstall:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(docker:*)",
+      "Bash(chmod:*)",
+      "Bash(./validate-docker-setup.sh:*)",
+      "Bash(Start-Sleep -Seconds 30)"
     ],
     "deny": [],
     "ask": []

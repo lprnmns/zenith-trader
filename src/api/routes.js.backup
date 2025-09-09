@@ -291,9 +291,7 @@ router.get('/strategies', requireAuth, async (req, res) => {
 
 // POST /api/strategies/quick - create quick strategy (only admin can create)
 router.post('/strategies/quick', requireAuth, async (req, res) => {
-  console.log('[API] === QUICK STRATEGY DEBUG ===');
-  console.log('[API] req.user:', JSON.stringify(req.user, null, 2));
-  console.log('[API] req.body:', JSON.stringify(req.body, null, 2));
+  console.log('[API] Quick strategy request - User role:', req.user?.role, 'User ID:', req.user?.id);
   try {
     const { walletAddress, name } = req.body;
     

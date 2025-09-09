@@ -67,13 +67,26 @@ class StrategyService {
         throw new StrategyValidationError('Invalid wallet address format');
       }
 
-      // Check if wallet address already exists
+      console.log('[StrategyService] === DUPLICATE CHECK DEBUG ===');
+      console.log('[StrategyService] Input userId:', userId);
+      console.log('[StrategyService] Input walletAddress:', strategyData.walletAddress);
+      console.log('[StrategyService] Query data:', { walletAddress: strategyData.walletAddress, userId });
+      
+      // Check if wallet address already exists for the same user
       const existingStrategy = await this.prisma.strategy.findFirst({
-        where: { walletAddress: strategyData.walletAddress }
+        where: { 
+          walletAddress: strategyData.walletAddress,
+          userId: userId
+        }
       });
 
+      console.log('[StrategyService] Existing strategy found:', !!existingStrategy);
       if (existingStrategy) {
-        throw new StrategyValidationError('Wallet address already in use');
+        console.log('[StrategyService] Existing strategy details:', JSON.stringify(existingStrategy, null, 2));
+      }
+      
+      if (existingStrategy) {
+        throw new StrategyValidationError('You already have a strategy for this wallet address');
       }
 
       // Validate exchange and copy mode
@@ -94,21 +107,35 @@ class StrategyService {
         }
       }
 
-      const strategy = await this.prisma.strategy.create({
-        data: {
-          ...strategyData,
-          userId,
-          // Ensure defaults are set
-          exchange: strategyData.exchange || 'OKX',
-          copyMode: strategyData.copyMode || 'Perpetual',
-          positionSize: strategyData.positionSize || 100,
-          leverage: strategyData.leverage || 5,
-          allowedTokens: strategyData.allowedTokens || [],
-          sizingMethod: strategyData.sizingMethod || 'Fixed Amount',
-          isActive: strategyData.isActive !== undefined ? strategyData.isActive : true,
-          // Set lastChecked to current time to prevent processing historical signals
-          lastChecked: strategyData.lastChecked || new Date()
+      // Transform data to match Prisma schema
+      const createData = {
+        ...strategyData,
+        userId,
+        // Ensure defaults are set
+        exchange: strategyData.exchange || 'OKX',
+        copyMode: strategyData.copyMode || 'Perpetual',
+        positionSize: strategyData.positionSize || 100,
+        leverage: strategyData.leverage || 5,
+        allowedTokens: strategyData.allowedTokens || [],
+        sizingMethod: strategyData.sizingMethod || 'Fixed Amount',
+        isActive: strategyData.isActive !== undefined ? strategyData.isActive : true,
+        // Set lastChecked to current time to prevent processing historical signals
+        lastChecked: strategyData.lastChecked || new Date()
+      };
+
+      // Handle equityAllocation conversion
+      if (strategyData.equityAllocation) {
+        if (strategyData.copyMode === 'PERCENTAGE') {
+          createData.percentageToCopy = strategyData.equityAllocation;
+        } else {
+          createData.amountPerTrade = strategyData.equityAllocation;
         }
+        // Remove equityAllocation as it's not in the schema
+        delete createData.equityAllocation;
+      }
+
+      const strategy = await this.prisma.strategy.create({
+        data: createData
       });
 
       // Log the action
@@ -159,16 +186,27 @@ class StrategyService {
           throw new StrategyValidationError('Invalid wallet address format');
         }
 
-        // Check if wallet address already exists
+        console.log('[StrategyService] === DUPLICATE CHECK DEBUG ===');
+      console.log('[StrategyService] Input userId:', userId);
+      console.log('[StrategyService] Input walletAddress:', strategyData.walletAddress);
+      console.log('[StrategyService] Query data:', { walletAddress: strategyData.walletAddress, userId });
+      
+      // Check if wallet address already exists for the same user
         const existingStrategy = await this.prisma.strategy.findFirst({
           where: { 
             walletAddress: updateData.walletAddress,
+            userId: userId,
             id: { not: parseInt(id) }
           }
         });
 
-        if (existingStrategy) {
-          throw new StrategyValidationError('Wallet address already in use');
+        console.log('[StrategyService] Existing strategy found:', !!existingStrategy);
+      if (existingStrategy) {
+        console.log('[StrategyService] Existing strategy details:', JSON.stringify(existingStrategy, null, 2));
+      }
+      
+      if (existingStrategy) {
+          throw new StrategyValidationError('You already have a strategy for this wallet address');
         }
       }
 

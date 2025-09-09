@@ -215,7 +215,7 @@ const validateExchange = (exchange) => {
 };
 
 const validateCopyMode = (mode) => {
-  return ['Perpetual', 'Spot'].includes(mode);
+  return ['MIRROR', 'REVERSE', 'PERCENTAGE'].includes(mode);
 };
 
 module.exports = {

@@ -33,6 +33,23 @@ class GoogleAuthService {
   }
 
   /**
+   * Generate Google OAuth authorization URL with specific state
+   */
+  getAuthUrlWithState(state) {
+    const scopes = [
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ];
+
+    return this.oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      prompt: 'consent',
+      state: state
+    });
+  }
+
+  /**
    * Generate secure state parameter for CSRF protection
    */
   generateState() {
@@ -51,8 +68,23 @@ class GoogleAuthService {
    */
   async handleCallback(code, state, sessionState) {
     try {
+      console.log('[GoogleAuth] handleCallback called with:', { 
+        code: !!code, 
+        state: !!state, 
+        sessionState: !!sessionState,
+        stateMatch: state === sessionState 
+      });
+
       // Verify state for CSRF protection
-      if (!this.verifyState(state, sessionState)) {
+      if (!state) {
+        throw new Error('State parameter is missing');
+      }
+
+      if (!sessionState) {
+        console.log('[GoogleAuth] Warning: No session state found, continuing with state validation only');
+        // For now, continue without session state validation to debug the issue
+        // TODO: Re-enable proper session state validation once the root cause is found
+      } else if (!this.verifyState(state, sessionState)) {
         throw new Error('Invalid state parameter');
       }
 

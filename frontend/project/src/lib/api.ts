@@ -47,7 +47,6 @@ export const getDashboardSummary = () => apiClient.get('/dashboard/summary');
 export const getSuggestedWallets = () => apiClient.get('/explorer/suggested-wallets');
 export const getWalletTradeHistory = (address: string) => apiClient.get(`/wallets/${address}/trade-history`);
 export const getWalletAnalysis = (address: string) => apiClient.get(`/explorer/${address}/analysis`, {
-  params: { timestamp: Date.now() },
-  headers: { 'Cache-Control': 'no-cache' }
+  params: { timestamp: Date.now() }
 });
 export const getStrategyTrades = (id: string | number) => apiClient.get(`/strategies/${id}/trades`);

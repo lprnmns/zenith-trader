@@ -25,13 +25,19 @@ const requireAuth = async (req, res, next) => {
     console.log('[Auth] JWT Secret exists:', !!process.env.JWT_SECRET);
     console.log('[Auth] JWT Secret length:', process.env.JWT_SECRET?.length || 0);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('[Auth] Token decoded for user:', decoded.userId);
+    const userId = decoded.userId || decoded.id; // Handle both formats
+    console.log('[Auth] === TOKEN DEBUG ===');
+    console.log('[Auth] Raw decoded token:', JSON.stringify(decoded, null, 2));
+    console.log('[Auth] decoded.userId:', decoded.userId);
+    console.log('[Auth] decoded.id:', decoded.id);
+    console.log('[Auth] Final userId:', userId);
+    console.log('[Auth] === TOKEN DEBUG END ===');
     
     // Find user and verify they exist and are active
-    console.log('[Auth] Looking up user with ID:', decoded.userId);
+    console.log('[Auth] Looking up user with ID:', userId);
     
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
       select: {
         id: true,
         email: true,

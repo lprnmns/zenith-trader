@@ -52,31 +52,6 @@ async function main() {
       address: '0xc82b2e484b161d20eae386877d57c4e5807b5581', 
       name: 'Whale #3 - Alameda Research',
       riskLevel: 'Medium'
-    },
-    { 
-      address: '0x28c6c06298d514db089934071355e5743bf21d60', 
-      name: 'Whale #4 - Binance Hot Wallet',
-      riskLevel: 'High'
-    },
-    { 
-      address: '0x5754284f345afc66a98fbB0A0Afe71e0F007B949', 
-      name: 'Whale #5 - Coinbase Prime',
-      riskLevel: 'Medium'
-    },
-    { 
-      address: '0x6666666666666666666666666666666666666666', 
-      name: 'Whale #6 - DeFi Whale',
-      riskLevel: 'Medium'
-    },
-    { 
-      address: '0x42f9a8dd7a0c841e3915ab0cf0b4051a1a1a1a1a', 
-      name: 'Whale #7 - Smart Money',
-      riskLevel: 'Low'
-    },
-    { 
-      address: '0x7777777777777777777777777777777777777777', 
-      name: 'Whale #8 - Yield Farmer',
-      riskLevel: 'Low'
     }
   ];
 

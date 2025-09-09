@@ -9,10 +9,12 @@ const router = express.Router();
  */
 router.get('/google', (req, res) => {
   try {
-    const authUrl = googleAuthService.getAuthUrl();
+    // Generate state and store in session
+    const state = googleAuthService.generateState();
+    req.session.oauthState = state;
     
-    // Store state in session for CSRF protection
-    req.session.oauthState = authUrl.match(/state=([^&]*)/)[1];
+    // Generate auth URL with the state
+    const authUrl = googleAuthService.getAuthUrlWithState(state);
     
     res.redirect(authUrl);
   } catch (error) {
@@ -32,8 +34,21 @@ router.get('/google/callback', async (req, res) => {
     const { code, state } = req.query;
     const sessionState = req.session.oauthState;
 
+    console.log('[GoogleAuth] Callback received:', { code: !!code, state: !!state, sessionState: !!sessionState });
+
     if (!code || !state) {
+      console.log('[GoogleAuth] Missing parameters:', { code, state });
       return res.redirect(`${process.env.GOOGLE_FAILURE_REDIRECT}?error=missing_params`);
+    }
+
+    if (!sessionState) {
+      console.log('[GoogleAuth] No session state found');
+      return res.redirect(`${process.env.GOOGLE_FAILURE_REDIRECT}?error=no_session_state`);
+    }
+
+    if (state !== sessionState) {
+      console.log('[GoogleAuth] State mismatch:', { state, sessionState });
+      return res.redirect(`${process.env.GOOGLE_FAILURE_REDIRECT}?error=state_mismatch`);
     }
 
     // Clear state from session
@@ -50,6 +65,7 @@ router.get('/google/callback', async (req, res) => {
     redirectUrl.searchParams.set('token', result.token);
     redirectUrl.searchParams.set('user', JSON.stringify(result.user));
     
+    console.log('[GoogleAuth] Authentication successful for:', result.user.email);
     res.redirect(redirectUrl.toString());
   } catch (error) {
     console.error('Google OAuth callback error:', error);

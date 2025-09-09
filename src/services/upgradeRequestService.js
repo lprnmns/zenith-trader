@@ -181,8 +181,21 @@ class UpgradeRequestService {
                             <li style="margin: 5px 0;"><strong>Email:</strong> ${user.email}</li>
                             <li style="margin: 5px 0;"><strong>Current Role:</strong> ${user.role}</li>
                             <li style="margin: 5px 0;"><strong>Request Date:</strong> ${new Date(upgradeRequest.createdAt).toLocaleString()}</li>
+                            ${upgradeRequest.contactInfo ? `
+                                <li style="margin: 5px 0;"><strong>Contact Information:</strong> ${upgradeRequest.contactInfo}</li>
+                            ` : ''}
+                            ${upgradeRequest.email && upgradeRequest.email !== user.email ? `
+                                <li style="margin: 5px 0;"><strong>Alternative Email:</strong> ${upgradeRequest.email}</li>
+                            ` : ''}
                         </ul>
                     </div>
+
+                    ${upgradeRequest.message ? `
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="margin: 0 0 15px 0; color: #1f2937;">User Message</h3>
+                            <p style="margin: 0; white-space: pre-wrap;">${upgradeRequest.message}</p>
+                        </div>
+                    ` : ''}
 
                     <div style="text-align: center; margin-top: 30px;">
                         <a href="${process.env.ADMIN_URL || 'http://localhost:3001'}/admin/upgrade-requests" 

@@ -19,7 +19,7 @@ model User {
   password    String?
   role        Role     @default(USER)
   googleId    String?  @unique
-  googleEmail String?  @unique
+  googleEmail String?
   isActive    Boolean  @default(true)
   lastLoginAt DateTime?
   createdAt   DateTime @default(now())
@@ -103,7 +103,7 @@ model Strategy {
   updatedAt      DateTime  @updatedAt
 
   name           String
-  walletAddress  String    @unique
+  walletAddress  String
   
   // Exchange Configuration
   exchange       String    @default("OKX") // 'OKX' | 'Binance' | 'Bybit'
@@ -141,6 +141,7 @@ model Strategy {
   walletEvents   WalletEvent[]
   tradingSignals TradingSignal[]
 
+  @@unique([userId, walletAddress])
   @@index([userId])
 }
 

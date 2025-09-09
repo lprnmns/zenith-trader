@@ -9,7 +9,7 @@ const strategyFormSchema = z.object({
   exchange: z.enum(['OKX', 'Binance', 'Bybit'], {
     errorMap: () => ({ message: 'Invalid exchange' })
   }),
-  copyMode: z.enum(['Perpetual', 'Spot'], {
+  copyMode: z.enum(['MIRROR', 'REVERSE', 'PERCENTAGE'], {
     errorMap: () => ({ message: 'Invalid copy mode' })
   }),
   riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH'], {
