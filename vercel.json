@@ -1,5 +1,12 @@
 {
   "version": 2,
+  "redirects": [
+    {
+      "source": "/api/auth/google",
+      "destination": "https://api.zenithtrader.alperenmanas.app/api/auth/google",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
