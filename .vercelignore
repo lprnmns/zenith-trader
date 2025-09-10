@@ -1,0 +1,14 @@
+﻿node_modules
+.git
+.env
+.env.local
+*.log
+coverage
+.nyc_output
+dist
+.vscode
+.idea
+*.sql
+*.backup
+test-results
+playwright-report
