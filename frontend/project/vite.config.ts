@@ -9,6 +9,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      workbox: {
+        // Avoid SPA fallback for API paths (important for OAuth routes)
+        navigateFallbackDenylist: [
+          /^\/api\//
+        ],
+      },
       manifest: {
         name: 'Zenith Trader',
         short_name: 'ZenithTrader',
@@ -28,6 +34,10 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Avoid SPA fallback for API paths (important for OAuth routes)
+        navigateFallbackDenylist: [
+          /^\/api\//
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.zerion\.io\/.*/i,
