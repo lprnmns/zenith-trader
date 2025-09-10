@@ -1,4 +1,4 @@
-{
+﻿{
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
@@ -35,9 +35,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "VITE_API_URL": "@zenith_api_url",
-    "VITE_GOOGLE_CLIENT_ID": "@google_client_id"
-  }
+  ]
 }
