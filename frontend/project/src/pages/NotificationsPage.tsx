@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +69,7 @@ export function NotificationsPage() {
 
       if (response.ok) {
         setSubscriptions(prev => prev.filter(sub => sub.walletAddress !== walletAddress));
-        toast.success(`🔕 Notifications disabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+        toast.success(`?? Notifications disabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
       } else {
         toast.error('Failed to remove subscription');
       }
@@ -197,7 +197,7 @@ export function NotificationsPage() {
                       <div className="text-sm text-slate-400">
                         <span>Subscribed {formatDistanceToNow(new Date(subscription.createdAt))} ago</span>
                         {subscription.notificationCount && (
-                          <span className="ml-2">• {subscription.notificationCount} notifications sent</span>
+                          <span className="ml-2">� {subscription.notificationCount} notifications sent</span>
                         )}
                       </div>
                       

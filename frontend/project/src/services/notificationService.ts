@@ -1,5 +1,5 @@
 // Frontend notification service for PWA push notifications
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://20.79.186.203:3001/api';
 
 export interface NotificationSubscription {
   endpoint: string;

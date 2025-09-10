@@ -29,7 +29,7 @@ interface AuthState {
   fetchOKXCredentials: () => Promise<{ success: boolean; credentials?: any; error?: string }>;
 }
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://20.79.186.203:3001/api';
 
 export const useAuthStore = create<AuthState>()(
   persist(

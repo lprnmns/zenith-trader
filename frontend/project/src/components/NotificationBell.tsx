@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, BellRing, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../stores/authStore';
@@ -175,9 +175,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
           setIsSubscribed(true);
           
           if (pushEnabled) {
-            toast.success(`🔔 Push notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+            toast.success(`?? Push notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
           } else {
-            toast.success(`🔔 Browser notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+            toast.success(`?? Browser notifications enabled for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
           }
           
           // Show test notification
@@ -208,7 +208,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ walletAddres
 
         if (response.ok) {
           setIsSubscribed(false);
-          toast.success('🔕 Notifications disabled');
+          toast.success('?? Notifications disabled');
         }
       }
     } catch (error) {
