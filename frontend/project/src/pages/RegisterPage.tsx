@@ -44,7 +44,11 @@ export function RegisterPage() {
 
   const handleGoogleRegister = () => {
     // Redirect to Google OAuth
-    const base = import.meta.env.VITE_OAUTH_BASE_URL || '';
+    const envBase = (import.meta.env.VITE_OAUTH_BASE_URL as string | undefined);
+    const host = window.location.hostname;
+    const base = envBase && envBase.trim().length > 0
+      ? envBase.trim()
+      : (host.endsWith('zenithtrader.alperenmanas.app') ? 'https://api.zenithtrader.alperenmanas.app' : '');
     window.location.href = `${base}/api/auth/google`;
   };
 
