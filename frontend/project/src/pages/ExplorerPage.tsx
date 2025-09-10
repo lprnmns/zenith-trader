@@ -343,12 +343,20 @@ export function ExplorerPage() {
                       </div>
                     </div>
 
-                    {/* 30D PnL */}
+                    {/* PnL (1W/1M/1Y) - modern badge style */}
                     <div className="text-right">
-                      <div className={`text-lg font-bold ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent30d).toFixed(2)}%`}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${Number(wallet.pnlPercent7d ?? 0) >= 0 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-red-500/30 bg-red-500/10 text-red-400'}`}>
+                          {wallet.pnlPercent7d == null ? '-' : `${Number(wallet.pnlPercent7d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent7d).toFixed(2)}%`} <span className="text-slate-400">· 1W</span>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-red-500/30 bg-red-500/10 text-red-400'}`}>
+                          {wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent30d).toFixed(2)}%`} <span className="text-slate-400">· 1M</span>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${Number(wallet.pnlPercent365d ?? 0) >= 0 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-red-500/30 bg-red-500/10 text-red-400'}`}>
+                          {wallet.pnlPercent365d == null ? '-' : `${Number(wallet.pnlPercent365d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent365d).toFixed(2)}%`} <span className="text-slate-400">· 1Y</span>
+                        </span>
                       </div>
-                      <div className="text-slate-500 text-xs font-medium">30D PnL</div>
+                      <div className="text-slate-500 text-xs font-medium mt-1">PnL</div>
                     </div>
 
                     {/* Smart Score */}

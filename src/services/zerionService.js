@@ -3,13 +3,14 @@ const axios = require('axios');
 const config = require('../config');
 
 const apiClient = axios.create({
-	baseURL: 'https://api.zerion.io/v1',
-	headers: {
-		'accept': 'application/json',
-		'authorization': `Basic ${Buffer.from(config.zerionApiKey + ':', 'utf8').toString('base64')}`,
-		'Cache-Control': 'no-cache',
-		'Pragma': 'no-cache'
-	}
+  baseURL: 'https://api.zerion.io/v1',
+  headers: {
+    accept: 'application/json',
+    authorization: `Basic ${Buffer.from((config.zerionApiKey || process.env.ZERION_API_KEY || '') + ':', 'utf8').toString('base64')}`,
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+  },
+  timeout: 15000,
 });
 
 // Add request interceptor to add timestamp
@@ -25,24 +26,31 @@ apiClient.interceptors.request.use((config) => {
  * @returns {Promise<Object|null>} Formatlanmış PnL verisi.
  */
 async function getPerformancePreview(address) {
-	try {
-		const response = await apiClient.get(`/wallets/${address}/portfolio`);
-		const portfolio = response.data.data.attributes;
-		
-		// Debug logs removed for production
-		
-		const results = {
-			"1G": { pnlUSD: portfolio.changes?.absolute_1d, pnlPercentage: portfolio.changes?.percent_1d },
-			"1H": { pnlUSD: portfolio.changes?.absolute_7d, pnlPercentage: portfolio.changes?.percent_7d },
-			"1A": { pnlUSD: portfolio.changes?.absolute_30d, pnlPercentage: portfolio.changes?.percent_30d },
-			"1Y": { pnlUSD: portfolio.changes?.absolute_1y, pnlPercentage: portfolio.changes?.percent_1y }
-		};
-		console.log(`[Zerion] ${address} için PnL verisi başarıyla alındı.`);
-		return results;
-	} catch (error) {
-		console.error(`[Zerion] PnL alınamadı:`, error.response?.data || error.message);
-		return null;
-	}
+  try {
+    const response = await apiClient.get(`/wallets/${address}/portfolio`, { params: { currency: 'usd' } });
+    const attr = response?.data?.data?.attributes || {};
+    const ch = attr.changes || {};
+
+    const result = {
+      pnl1d: { usd: Number(ch.absolute_1d ?? 0), percent: Number(ch.percent_1d ?? 0) },
+      pnl7d: { usd: Number(ch.absolute_7d ?? 0), percent: Number(ch.percent_7d ?? 0) },
+      pnl30d: { usd: Number(ch.absolute_30d ?? 0), percent: Number(ch.percent_30d ?? 0) },
+      pnl1y: { usd: Number(ch.absolute_1y ?? 0), percent: Number(ch.percent_1y ?? 0) },
+      totalValueUsd: Number(
+        attr.total_value_usd ??
+        attr.total?.value ??
+        attr.total?.portfolio_value_usd ??
+        attr.net_usd ??
+        attr.total?.net_usd ??
+        0
+      )
+    };
+
+    return result;
+  } catch (error) {
+    console.error(`[Zerion] PnL/portfolio fetch failed for ${address}:`, error.response?.data || error.message);
+    return null;
+  }
 }
 
 /**
@@ -441,6 +449,50 @@ async function getPricesByIds(ids = []) {
 module.exports.getPricesByIds = getPricesByIds;
 
 /**
+ * Compute PnL percent for a wallet using charts/custom (start/end in epoch seconds)
+ */
+async function getPnLPercentViaCharts(address, days) {
+  try {
+    const end = Math.floor(Date.now() / 1000);
+    const start = end - days * 24 * 60 * 60;
+    const resp = await apiClient.get(`/wallets/${address}/charts/custom`, {
+      params: { start, end, currency: 'usd', _t: Date.now() },
+    });
+    const arr = resp?.data?.data || [];
+    if (!Array.isArray(arr) || arr.length < 2) return 0;
+    const pickVal = (p) => {
+      const a = p?.attributes || p || {};
+      return Number(
+        a.value ?? a.total_value_usd ?? a.portfolio_value_usd ?? a.net_usd ?? a.total?.value ?? 0
+      ) || 0;
+    };
+    const first = pickVal(arr[0]);
+    const last = pickVal(arr[arr.length - 1]);
+    if (first <= 0) return 0;
+    return ((last - first) / first) * 100;
+  } catch (error) {
+    return 0;
+  }
+}
+
+/**
+ * Get PnL percent set for 1/7/30 days using charts method.
+ */
+async function getPnLSet(address) {
+  // Compute in parallel for speed
+  const [p1d, p7d, p30d, p365d] = await Promise.all([
+    getPnLPercentViaCharts(address, 1),
+    getPnLPercentViaCharts(address, 7),
+    getPnLPercentViaCharts(address, 30),
+    getPnLPercentViaCharts(address, 365),
+  ]);
+  return { p1d, p7d, p30d, p365d };
+}
+
+module.exports.getPnLPercentViaCharts = getPnLPercentViaCharts;
+module.exports.getPnLSet = getPnLSet;
+
+/**
  * Fallback: Fetch prices from Coingecko for a subset of common symbols.
  * Returns Map(symbolUpper -> price)
  */
@@ -640,9 +692,18 @@ module.exports.getWalletsByTokenHolding = getWalletsByTokenHolding;
  */
 async function getWalletTotalValueUsd(address) {
   try {
-    const response = await apiClient.get(`/wallets/${address}/portfolio`);
-    const portfolio = response.data.data.attributes;
-    return Number(portfolio.total?.positions || 0);
+    const preview = await getPerformancePreview(address);
+    if (preview && typeof preview.totalValueUsd === 'number') return preview.totalValueUsd;
+    const response = await apiClient.get(`/wallets/${address}/portfolio`, { params: { currency: 'usd' } });
+    const attr = response?.data?.data?.attributes || {};
+    return Number(
+      attr.total_value_usd ??
+      attr.total?.value ??
+      attr.total?.portfolio_value_usd ??
+      attr.net_usd ??
+      attr.total?.net_usd ??
+      0
+    );
   } catch (error) {
     console.error(`[Zerion] ${address} için portföy değeri alınamadı:`, error.response?.data || error.message);
     return 0;

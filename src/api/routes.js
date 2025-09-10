@@ -102,36 +102,105 @@ router.get('/dashboard/summary', requireAuth, async (req, res) => {
   }
 });
 
-// Suggested wallets (consistencyScore desc) with real-time portfolio values
+// Suggested wallets (consistencyScore desc) with real-time portfolio values and auto-seed fallback
 router.get('/explorer/suggested-wallets', async (req, res) => {
   try {
-    // Get suggested wallets from database ordered by consistency score
-    const wallets = await prisma.suggestedWallet.findMany({ 
+    let wallets = await prisma.suggestedWallet.findMany({ 
       orderBy: { consistencyScore: 'desc' },
-      take: 20 // Limit to top 20 wallets
+      take: 20
     });
 
-    // Enhance wallets with real-time portfolio data from Zerion
+    // If DB is empty, auto-seed with default addresses
+    if (!wallets || wallets.length === 0) {
+      const defaults = (process.env.DEFAULT_SUGGESTED_WALLETS || '').split(',').map(s => s.trim()).filter(Boolean);
+      const fallback = defaults.length > 0 ? defaults : [
+        '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+        '0x8d12a197cb00d4747a1fe03395095ce2a5cc873f',
+        '0x28c6c06298d514db089934071355e5743bf21d60'
+      ];
+
+      for (const addr of fallback) {
+        try {
+          const perf = await zerionService.getPerformancePreview(addr);
+          const total = await zerionService.getWalletTotalValueUsd(addr);
+          const pnls = await zerionService.getPnLSet(addr);
+          let p1d = Number(pnls?.p1d ?? 0);
+          let p7d = Number(pnls?.p7d ?? 0);
+          let p30d = Number(pnls?.p30d ?? 0);
+          let p365d = Number(pnls?.p365d ?? 0);
+
+          const risk = (p30d ?? 0) >= 20 ? 'High' : (p30d ?? 0) <= -10 ? 'High' : ((p30d ?? 0) >= 5 ? 'Medium' : 'Medium');
+          await prisma.suggestedWallet.upsert({
+            where: { address: addr },
+            update: {
+              name: 'Suggested Wallet',
+              riskLevel: risk,
+              pnlPercent1d: p1d,
+              pnlPercent7d: p7d,
+              pnlPercent30d: p30d,
+              pnlPercent365d: p365d,
+              totalValue: total,
+              lastAnalyzedAt: new Date()
+            },
+            create: {
+              address: addr,
+              name: 'Suggested Wallet',
+              riskLevel: risk,
+              pnlPercent1d: p1d,
+              pnlPercent7d: p7d,
+              pnlPercent30d: p30d,
+              pnlPercent365d: p365d,
+              totalValue: total,
+              consistencyScore: 0,
+              smartScore: 0
+            }
+          });
+        } catch (err) {
+          console.warn('[API] Auto-seed failed for', addr, err.message);
+        }
+      }
+
+      wallets = await prisma.suggestedWallet.findMany({ orderBy: { consistencyScore: 'desc' }, take: 20 });
+    }
+
+    // Enhance wallets with real-time totals from Zerion (best-effort) and fill missing PnL (1/7/30d)
     const enhancedWallets = await Promise.all(
       wallets.map(async (wallet) => {
         try {
-          // Get real-time portfolio data from Zerion
-          const portfolioData = await zerionService.getPerformancePreview(wallet.address);
-          
-          // Extract total value from portfolio data
-          const totalValueUsd = portfolioData?.attributes?.total_value_usd || 
-                              portfolioData?.data?.attributes?.total_value_usd || 
-                              wallet.totalValue || 0;
+          const preview = await zerionService.getPerformancePreview(wallet.address);
+          const totalValueUsd = preview?.totalValueUsd ?? wallet.totalValue ?? 0;
+
+          const pnls = await zerionService.getPnLSet(wallet.address);
+          const p1d = Number(pnls?.p1d ?? 0);
+          const p7d = Number(pnls?.p7d ?? 0);
+          const p30d = Number(pnls?.p30d ?? 0);
+          const p365d = Number(pnls?.p365d ?? 0);
+
+          // Persist back (non-blocking)
+          try {
+            await prisma.suggestedWallet.update({
+              where: { id: wallet.id },
+              data: {
+                pnlPercent1d: p1d,
+                pnlPercent7d: p7d,
+                pnlPercent30d: p30d,
+                pnlPercent365d: p365d,
+                totalValue: Number(totalValueUsd) || 0,
+                lastAnalyzedAt: new Date()
+              }
+            });
+          } catch (_) {}
 
           return {
             ...wallet,
-            totalValueUsd: parseFloat(totalValueUsd) || 0,
+            totalValueUsd: Number(totalValueUsd) || 0,
+            pnlPercent1d: p1d,
+            pnlPercent7d: p7d,
+            pnlPercent30d: p30d,
+            pnlPercent365d: p365d,
             lastAnalyzedAt: new Date().toISOString()
           };
         } catch (error) {
-          console.error(`[API] Error fetching portfolio data for ${wallet.address}:`, error.message);
-          
-          // Fallback to existing total value if API call fails
           return {
             ...wallet,
             totalValueUsd: wallet.totalValue || 0,
@@ -141,8 +210,7 @@ router.get('/explorer/suggested-wallets', async (req, res) => {
       })
     );
 
-    // Sort by total value in descending order for better user experience
-    enhancedWallets.sort((a, b) => b.totalValueUsd - a.totalValueUsd);
+    enhancedWallets.sort((a, b) => (Number(b.totalValueUsd) || 0) - (Number(a.totalValueUsd) || 0));
 
     res.json(enhancedWallets);
   } catch (e) {
