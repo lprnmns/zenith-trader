@@ -12,6 +12,9 @@ const alphaFinder = require('./src/workers/alphaFinder');
 
 const app = express();
 
+// Trust proxy so secure cookies and protocol detection work behind Nginx/Proxy
+app.set('trust proxy', 1);
+
 // Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret-key',
@@ -30,17 +33,23 @@ app.use(express.json());
 // Configure CORS properly for OAuth and dev environment
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
+    const defaultOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
       'http://localhost:5176',
       'http://localhost:5177',
       'http://localhost:3000',
-      'http://localhost:3001'
+      'http://localhost:3001',
+      'https://zenithtrader.alperenmanas.app',
+      'https://api.zenithtrader.alperenmanas.app',
+      'https://zenith-trader.vercel.app'
     ];
+    const extraOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
+    const allowedOrigins = defaultOrigins.concat(extraOrigins).filter(Boolean);
+
     // Allow requests with no origin (like mobile apps or Postman)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

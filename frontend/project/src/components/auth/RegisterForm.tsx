@@ -55,7 +55,7 @@ export function RegisterForm() {
   return (
     <div className="space-y-6">
       <Button
-        onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/google`}
+        onClick={() => { const base = import.meta.env.VITE_OAUTH_BASE_URL || ''; window.location.href = `${base}/api/auth/google`; }}
         variant="outline"
         className="w-full h-11 border-slate-600 bg-slate-800/30 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-colors"
       >

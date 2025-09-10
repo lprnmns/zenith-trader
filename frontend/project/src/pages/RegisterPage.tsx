@@ -44,7 +44,8 @@ export function RegisterPage() {
 
   const handleGoogleRegister = () => {
     // Redirect to Google OAuth
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/google`;
+    const base = import.meta.env.VITE_OAUTH_BASE_URL || '';
+    window.location.href = `${base}/api/auth/google`;
   };
 
   return (
