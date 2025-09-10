@@ -36,7 +36,7 @@ export function UpgradeRequestDialog({ isOpen, onOpenChange }: UpgradeRequestDia
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://20.79.186.203:3001'}/auth/upgrade-request`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://20.79.186.203:3001'}/auth/upgrade-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
