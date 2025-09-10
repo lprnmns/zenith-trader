@@ -520,6 +520,83 @@ router.get('/strategies/:id/trades', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/notifications/subscriptions - direct endpoint
+router.get('/notifications/subscriptions', requireAuth, async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const subscriptions = await prisma.userWalletNotification.findMany({
+      where: {
+        userId: req.user.userId,
+        isActive: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    const mappedSubscriptions = subscriptions.map(sub => ({
+      id: sub.id.toString(),
+      walletAddress: sub.walletAddress,
+      isActive: sub.isActive,
+      createdAt: sub.createdAt.toISOString(),
+      lastNotification: sub.lastNotificationAt ? sub.lastNotificationAt.toISOString() : null,
+      notificationCount: sub.notificationCount || 0
+    }));
+    
+    res.json({ 
+      success: true,
+      subscriptions: mappedSubscriptions
+    });
+    
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('[API] Get subscriptions error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get subscriptions' 
+    });
+  }
+});
+
+// POST /api/notifications/unsubscribe - direct endpoint
+router.post('/notifications/unsubscribe', requireAuth, async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    const { walletAddress } = req.body;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ 
+        error: 'Missing walletAddress' 
+      });
+    }
+
+    await prisma.userWalletNotification.updateMany({
+      where: {
+        userId: req.user.userId,
+        walletAddress
+      },
+      data: {
+        isActive: false
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Successfully unsubscribed from wallet notifications'
+    });
+    
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('[API] Unsubscribe error:', error);
+    res.status(500).json({ 
+      error: 'Failed to unsubscribe from notifications' 
+    });
+  }
+});
+
 // Mount notification routes
 router.use('/notifications', notificationRoutes);
 

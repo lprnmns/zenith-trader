@@ -1,0 +1,99 @@
+﻿// POST /api/strategies/quick - create quick strategy (only admin can create)
+router.post('/strategies/quick', requireAuth, async (req, res) => {
+  console.log('[API] === QUICK STRATEGY DEBUG START ===');
+  console.log('[API] req.user object:', JSON.stringify(req.user, null, 2));
+  console.log('[API] req.user.userId:', req.user?.userId);
+  console.log('[API] req.user.id:', req.user?.id);
+  console.log('[API] req.body:', JSON.stringify(req.body, null, 2));
+  
+  try {
+    const { walletAddress, name } = req.body;
+    console.log('[API] Extracted:', { walletAddress, name });
+    
+    if (!walletAddress || !name) {
+      console.log('[API] Missing fields validation failed');
+      return res.status(400).json({ error: 'Wallet address and name are required' });
+    }
+    
+    // Validate wallet address format
+    if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
+      console.log('[API] Wallet format validation failed');
+      return res.status(400).json({ error: 'Invalid wallet address format' });
+    }
+    
+    console.log('[API] About to check existing strategy...');
+    console.log('[API] Query params:', { walletAddress, userId: req.user.userId });
+    
+    // Check if wallet address already exists for this user
+    const existingStrategy = await prisma.strategy.findFirst({
+      where: { 
+        walletAddress,
+        userId: req.user.userId
+      }
+    });
+    
+    console.log('[API] Existing strategy result:', existingStrategy ? 'FOUND' : 'NOT_FOUND');
+    if (existingStrategy) {
+      console.log('[API] Existing strategy details:', JSON.stringify(existingStrategy, null, 2));
+    }
+    
+    if (existingStrategy) {
+      console.log('[API] Returning wallet already in use error');
+      return res.status(400).json({ error: 'You already have a strategy for this wallet address' });
+    }
+    
+    console.log('[API] About to get encrypted credentials...');
+    
+    let encryptedCredentials;
+    try {
+      encryptedCredentials = getEncryptedOKXCredentials();
+      console.log('[API] Encrypted credentials obtained successfully');
+    } catch (encryptError) {
+      console.error('[API] Encryption failed:', encryptError);
+      return res.status(500).json({ error: 'Credential encryption failed: ' + encryptError.message });
+    }
+    
+    // Pre-configured quick strategy settings
+    const quickStrategyData = {
+      name,
+      walletAddress,
+      exchange: 'OKX',
+      copyMode: 'Perpetual',
+      leverage: 3,
+      sizingMethod: 'Percentage of Wallet\'s Trade',
+      positionSize: 100,
+      percentageToCopy: 100,
+      ...encryptedCredentials,
+      userId: req.user.userId,
+      lastChecked: new Date()
+    };
+    
+    console.log('[API] Strategy data prepared:', JSON.stringify({
+      ...quickStrategyData,
+      okxApiKey: quickStrategyData.okxApiKey ? '[ENCRYPTED]' : undefined,
+      okxApiSecret: quickStrategyData.okxApiSecret ? '[ENCRYPTED]' : undefined,
+      okxPassphrase: quickStrategyData.okxPassphrase ? '[ENCRYPTED]' : undefined
+    }, null, 2));
+    
+    console.log('[API] Calling strategyService.createStrategy...');
+    
+    const strategy = await strategyService.createStrategy(quickStrategyData, req.user.userId);
+    
+    console.log('[API] Strategy created successfully! ID:', strategy.id);
+    
+    // Remove sensitive data before sending response
+    const { okxApiKey, okxApiSecret, okxPassphrase, ...safeStrategy } = strategy;
+    
+    console.log('[API] === QUICK STRATEGY DEBUG END - SUCCESS ===');
+    res.json(safeStrategy);
+  } catch (error) {
+    console.error('[API] === QUICK STRATEGY DEBUG END - ERROR ===');
+    console.error('[API] Error name:', error.name);
+    console.error('[API] Error message:', error.message);
+    console.error('[API] Error stack:', error.stack);
+    if (error.code) console.error('[API] Error code:', error.code);
+    if (error.meta) console.error('[API] Error meta:', error.meta);
+    
+    res.status(500).json({ error: error.message || 'Unknown error occurred' });
+  }
+});

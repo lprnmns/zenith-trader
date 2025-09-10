@@ -5,6 +5,7 @@ const positionSignalService = require('../services/positionSignalService');
 const OKXService = require('../services/okxService');
 const notificationService = require('../services/notificationService');
 const adminNotificationService = require('../services/adminNotificationService');
+const walletNotificationService = require('../services/walletNotificationService');
 
 const prisma = new PrismaClient();
 let activeStrategies = new Map();
@@ -53,18 +54,36 @@ async function runSignalCheck() {
 		
 		const newSignals = await positionSignalService.getNewPositionSignals(strategy.walletAddress, sinceDate);
 
-			if (Array.isArray(newSignals) && newSignals.length > 0) {
-				console.log(`🔥 [${strategy.name}] için ${newSignals.length} yeni sinyal bulundu!`);
-				
-				// Notify admin about position detection (only for admin strategies)
-				if (strategy.user?.email === 'manasalperen@gmail.com' || strategy.userId === 1) {
-					for (const sig of newSignals) {
-						await adminNotificationService.notifyPositionDetection({
-							...sig,
-							walletAddress: strategy.walletAddress
-						});
-					}
+		if (Array.isArray(newSignals) && newSignals.length > 0) {
+			console.log(`🔥 [${strategy.name}] için ${newSignals.length} yeni sinyal bulundu!`);
+			
+			// Notify admin about position detection (only for admin strategies)
+			if (strategy.user?.email === 'manasalperen@gmail.com' || strategy.userId === 1) {
+				for (const sig of newSignals) {
+					await adminNotificationService.notifyPositionDetection({
+						...sig,
+						walletAddress: strategy.walletAddress
+					});
 				}
+			}
+			
+			// Send wallet activity notifications to subscribers
+			for (const signal of newSignals) {
+				try {
+					await walletNotificationService.notifyWalletActivity(strategy.walletAddress, {
+						type: signal.type,
+						token: signal.token,
+						amount: signal.amount,
+						percentage: signal.percentage,
+						action: signal.type,
+						totalValue: signal.totalValue,
+						date: signal.date
+					});
+					console.log(`🔔 [${strategy.name}] Wallet notification sent for ${signal.type} ${signal.token}`);
+				} catch (notifError) {
+					console.error(`🔔 [${strategy.name}] Wallet notification failed:`, notifError.message);
+				}
+			}
 				
 				for (const signal of newSignals) {
 				try {
@@ -323,7 +342,7 @@ async function runSignalCheck() {
  * Strateji motorunu başlatır.
  * @param {number} intervalMs - Kontrol döngüsü aralığı (milisaniye).
  */
-async function start(intervalMs = 30000) {
+async function start(intervalMs = 300000) {
 	await loadStrategies();
 	console.log(`[Engine] Strateji motoru başlatıldı. Kontrol aralığı: ${intervalMs / 1000} saniye.`);
 	

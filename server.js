@@ -6,7 +6,6 @@ const config = require('./src/config');
 const apiRoutes = require('./src/api/routes');
 const googleAuthRoutes = require('./src/api/googleAuthRoutes');
 const adminRoutes = require('./src/routes/admin');
-const notificationRoutes = require('./src/routes/notifications');
 const healthRoutes = require('./src/routes/health');
 const strategyEngine = require('./src/core/strategyEngine');
 const alphaFinder = require('./src/workers/alphaFinder');
@@ -58,7 +57,6 @@ app.use(cors(corsOptions));
 app.use('/api', apiRoutes);
 app.use('/api/auth', googleAuthRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/', healthRoutes);
 
 async function startServer() {

@@ -179,6 +179,36 @@ router.post('/broadcast', async (req, res) => {
 });
 
 /**
+ * GET /api/notifications/subscriptions
+ * Get user's wallet notification subscriptions
+ */
+router.get('/subscriptions', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    
+    const subscriptions = await walletNotificationService.getUserSubscriptions(userId);
+    
+    res.json({ 
+      success: true,
+      subscriptions: subscriptions.map(sub => ({
+        id: sub.id.toString(),
+        walletAddress: sub.walletAddress,
+        isActive: sub.isActive,
+        createdAt: sub.createdAt.toISOString(),
+        lastNotification: sub.lastNotificationAt ? sub.lastNotificationAt.toISOString() : null,
+        notificationCount: sub.notificationCount || 0
+      }))
+    });
+  } catch (error) {
+    console.error('[API] Get subscriptions error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get subscriptions' 
+    });
+  }
+});
+
+/**
  * GET /api/notifications/stats
  * Get notification statistics
  */

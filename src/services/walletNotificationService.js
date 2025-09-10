@@ -139,10 +139,8 @@ class WalletNotificationService {
                     userId,
                     isActive: true
                 },
-                select: {
-                    id: true,
-                    walletAddress: true,
-                    createdAt: true
+                orderBy: {
+                    createdAt: 'desc'
                 }
             });
             
@@ -243,7 +241,20 @@ class WalletNotificationService {
                 }
             }
             
-            console.log(`[WalletNotification] Sent ${notificationCount} push notifications`);
+            // Update notification tracking for all notified users
+            for (const walletNotif of walletNotifications) {
+                await prisma.userWalletNotification.update({
+                    where: { id: walletNotif.id },
+                    data: {
+                        lastNotificationAt: new Date(),
+                        notificationCount: {
+                            increment: 1
+                        }
+                    }
+                });
+            }
+            
+            console.log(`[WalletNotification] Sent ${notificationCount} push notifications and updated tracking`);
             return notificationCount;
         } catch (error) {
             console.error('[WalletNotification] Notify activity error:', error);
