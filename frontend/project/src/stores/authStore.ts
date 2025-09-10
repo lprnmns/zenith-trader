@@ -29,7 +29,7 @@ interface AuthState {
   fetchOKXCredentials: () => Promise<{ success: boolean; credentials?: any; error?: string }>;
 }
 
-const API_BASE = 'https://20.79.186.203:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const useAuthStore = create<AuthState>()(
   persist(

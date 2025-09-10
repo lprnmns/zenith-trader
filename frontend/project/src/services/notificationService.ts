@@ -1,5 +1,5 @@
 // Frontend notification service for PWA push notifications
-const API_BASE = 'https://20.79.186.203:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface NotificationSubscription {
   endpoint: string;
