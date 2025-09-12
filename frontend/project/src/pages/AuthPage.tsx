@@ -37,13 +37,28 @@ export function AuthPage({ initial }: { initial?: Mode }) {
   const isLogin = mode === 'login';
 
   return (
-  <div className="min-h-screen w-full relative flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+    <div className="min-h-screen w-full relative flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
       <FloatingCryptoSymbols />
       <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
       <div className="absolute -bottom-24 -left-24 h-[28rem] w-[28rem] rounded-full bg-blue-500/20 blur-3xl" />
 
-      <div className="relative z-10 w-full max-w-5xl px-4">
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-2xl border border-slate-800/70 bg-slate-900/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-5xl px-4 py-8 sm:py-0">
+        {/* Mobile Logo Header */}
+        <div className="lg:hidden flex flex-col items-center mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center">
+              <Zap className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">Zenith Trader</h1>
+          </div>
+          <p className="text-center text-slate-300 text-sm px-4">
+            {isLogin
+              ? 'Sign in to access your crypto trading strategies'
+              : 'Join the platform to start copy trading'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:rounded-2xl border-0 lg:border border-slate-800/70 bg-slate-900/40 lg:bg-slate-900/40 backdrop-blur-2xl shadow-2xl overflow-hidden">
           {/* Info / Marketing Panel (slides) */}
           <div className="relative hidden lg:block">
             <AnimatePresence mode="wait" initial={false}>
@@ -99,8 +114,8 @@ export function AuthPage({ initial }: { initial?: Mode }) {
             />
           </div>
 
-      {/* Forms Panel */}
-          <div className="relative p-6 sm:p-8 lg:p-10 bg-slate-950/30 backdrop-blur-2xl border-l border-slate-800/60">
+          {/* Forms Panel */}
+          <div className="relative p-6 sm:p-8 lg:p-10 bg-slate-950/30 backdrop-blur-2xl lg:border-l border-slate-800/60 rounded-2xl lg:rounded-none">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-white">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/stores/authStore';
 import { Sidebar } from './Sidebar';
+import { MobileNavBar } from './MobileNavBar';
 import { Menu, X, Bell } from 'lucide-react';
 import { FloatingCryptoSymbols } from '@/components/ui/FloatingCryptoSymbols';
 import NotificationSettings from '@/components/NotificationSettings';
@@ -37,8 +38,10 @@ export function AppLayout() {
     // Ana kapsayıcı: Ekranı kaplar ve Flexbox uygular
     <div className="flex h-screen bg-slate-900 text-foreground"> {/* ANA ARKA PLAN RENGİ */}
       
-      {/* 1. Sütun: Sabit ve Stilli Sidebar */}
-      <Sidebar onNotificationClick={toggleNotificationPanel} />
+      {/* 1. Sütun: Sabit ve Stilli Sidebar - Only on desktop */}
+      <div className="hidden lg:block">
+        <Sidebar onNotificationClick={toggleNotificationPanel} />
+      </div>
 
       {/* 2. Sütun: Kaydırılabilir Ana İçerik Alanı */}
       {/* 'bg-slate-900' veya temanızın ana arka plan rengi */}
@@ -68,10 +71,13 @@ export function AppLayout() {
         </div>
 
         {/* Page Content */}
-        <div className="lg:pt-0 pt-16">
+        <div className="lg:pt-0 pt-16 pb-20 lg:pb-0">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNavBar />
 
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
