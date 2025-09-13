@@ -50,7 +50,7 @@ export function AppLayout() {
         
         {/* Mobile Header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
-          <div className="flex items-center justify-between p-4 pl-16">
+          <div className="flex items-center justify-center p-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,14 +59,6 @@ export function AppLayout() {
               </div>
               <span className="text-lg font-semibold">Zenith Trader</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-300"
-              onClick={() => setIsNotificationPanelOpen(true)}
-            >
-              <Bell className="w-5 h-5" />
-            </Button>
           </div>
         </div>
 
@@ -79,17 +71,6 @@ export function AppLayout() {
       {/* Mobile Bottom Navigation */}
       <MobileNavBar />
 
-      {/* Mobile Sidebar */}
-      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="sm" className="lg:hidden fixed top-4 left-4 z-30 text-slate-300">
-            <Menu className="w-5 h-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 bg-slate-900/95 backdrop-blur-xl border-slate-700/50 z-40">
-          <Sidebar onNotificationClick={toggleNotificationPanel} />
-        </SheetContent>
-      </Sheet>
 
       {/* Notification Panel */}
       <Sheet open={isNotificationPanelOpen} onOpenChange={setIsNotificationPanelOpen}>
