@@ -270,9 +270,9 @@ export function ExplorerPage() {
         </CardHeader>
         <CardContent className="pt-0">
           {loadingSuggested ? (
-            <div className="space-y-2">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="flex items-center p-4 border-b border-slate-800">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-1">
+              {[...Array(4)].map((_, index) => (
+                <div key={index} className="min-w-[280px] snap-start">
                   <div className="w-16">
                     <Skeleton className="h-8 w-16" />
                   </div>
@@ -314,14 +314,55 @@ export function ExplorerPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-1">
               {filteredAndSorted.map((wallet, index) => (
-                <div 
-                  key={wallet.address || wallet.id || index}
-                  className="group flex items-center p-4 border-b border-slate-800 transition-colors duration-200 hover:bg-slate-800/50 cursor-pointer"
-                >
-                  {/* Main content - aligned to left */}
-                  <div className="flex-grow grid grid-cols-6 gap-4 items-center text-left">
+                <div key={wallet.address || wallet.id || index} className="min-w-[280px] snap-start">
+                  {/* Mobile card */}
+                  <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="text-white font-medium text-sm">{wallet.name || 'Suggested Wallet'}</div>
+                          <div className="text-xs text-slate-400 font-mono">{truncateAddress(wallet.address)}</div>
+                        </div>
+                        <Badge className={`${getRiskBadgeStyle(wallet.riskLevel)} text-[10px] px-2 py-0.5`} variant="outline">{wallet.riskLevel || 'Medium'}</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-slate-900/50 rounded-lg p-2">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Wallet className="w-3 h-3 text-slate-400" />
+                            <span className="text-[10px] text-slate-400">Portfolio</span>
+                          </div>
+                          <p className="text-white font-bold text-sm">{formatLargeCurrency(wallet.totalValueUsd || 0)}</p>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg p-2">
+                          <div className="flex items-center gap-1 mb-1">
+                            <BrainCircuit className="w-3 h-3 text-slate-400" />
+                            <span className="text-[10px] text-slate-400">Score</span>
+                          </div>
+                          <p className="text-white font-bold text-sm">{wallet.smartScore == null ? '-' : Math.round(wallet.smartScore)}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 mb-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[11px] text-slate-400">7D PnL</span>
+                          <span className={`text-xs font-semibold ${Number(wallet.pnlPercent7d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wallet.pnlPercent7d == null ? '-' : `${Number(wallet.pnlPercent7d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent7d).toFixed(2)}%`}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[11px] text-slate-400">30D PnL</span>
+                          <span className={`text-xs font-semibold ${Number(wallet.pnlPercent30d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wallet.pnlPercent30d == null ? '-' : `${Number(wallet.pnlPercent30d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent30d).toFixed(2)}%`}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[11px] text-slate-400">1Y PnL</span>
+                          <span className={`text-xs font-semibold ${Number(wallet.pnlPercent365d ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wallet.pnlPercent365d == null ? '-' : `${Number(wallet.pnlPercent365d) >= 0 ? '+' : ''}${Number(wallet.pnlPercent365d).toFixed(2)}%`}</span>
+                        </div>
+                      </div>
+                      <Button size="sm" className="w-full h-8 bg-emerald-500 hover:bg-emerald-600 text-white text-xs" onClick={() => { setWalletAddress(wallet.address); handleAnalyze(); }}>
+                        <BarChart3 className="w-3 h-3 mr-1" /> Analyze Wallet
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
                     {/* Wallet Name & Address */}
                     <div className="col-span-2">
                       <div className="text-white font-medium">
