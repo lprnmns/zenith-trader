@@ -97,8 +97,7 @@ export const PWAInstallPrompt: React.FC = () => {
   };
 
   // Don't show if already installed or no prompt available
-  if (isInstalled || !deferredPrompt) {
-    if (showPrompt) setShowPrompt(false);
+  if (isInstalled || !showPrompt || !deferredPrompt) {
     return null;
   }
 
