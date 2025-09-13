@@ -362,6 +362,7 @@ export function ExplorerPage() {
                       </Button>
                     </CardContent>
                   </Card>
+                </div>
               ))}
             </div>
           )}
