@@ -44,7 +44,7 @@ export const PWAInstallPrompt: React.FC = () => {
         if (!localStorage.getItem('pwa_install_dismissed')) {
           setShowPrompt(true);
         }
-      }, 5000);
+      }, 2500);
     };
 
     // Listen for app installed event
@@ -97,41 +97,42 @@ export const PWAInstallPrompt: React.FC = () => {
   };
 
   // Don't show if already installed or no prompt available
-  if (isInstalled || !showPrompt || !deferredPrompt) {
+  if (isInstalled || !deferredPrompt) {
+    if (showPrompt) setShowPrompt(false);
     return null;
   }
 
   return (
-    <Card className="fixed bottom-4 left-4 right-4 z-50 border-blue-200 bg-blue-50 md:left-auto md:w-80">
+    <Card className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:w-80 border-slate-700/60 bg-slate-900/95 backdrop-blur-xl shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Smartphone className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Zenith Trader App</CardTitle>
+            <Smartphone className="h-5 w-5 text-emerald-400" />
+            <CardTitle className="text-lg text-white">Zenith Trader App</CardTitle>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDismiss}
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 text-slate-300 hover:text-white"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <CardDescription>
+        <CardDescription className="text-slate-400">
           Install the app on your phone for a better experience
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex flex-col space-y-2">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-slate-300">
             ✅ Instant notifications
             <br />
             ✅ Offline access
             <br />
             ✅ Home screen shortcut
           </div>
-          <Button onClick={handleInstallClick} className="w-full">
+          <Button onClick={handleInstallClick} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
             <Download className="mr-2 h-4 w-4" />
             Install App
           </Button>
