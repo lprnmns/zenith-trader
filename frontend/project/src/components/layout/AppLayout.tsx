@@ -9,6 +9,7 @@ import { Menu, X, Bell } from 'lucide-react';
 import { FloatingCryptoSymbols } from '@/components/ui/FloatingCryptoSymbols';
 import NotificationSettings from '@/components/NotificationSettings';
 import { Toaster } from "@/components/ui/sonner";
+import { MobileMenu } from './MobileMenu';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -49,8 +50,11 @@ export function AppLayout() {
         <FloatingCryptoSymbols />
         
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
-          <div className="flex items-center justify-center p-4">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button aria-label="Open menu" onClick={() => setIsMobileMenuOpen(true)} className="text-slate-200">
+              <Menu className="w-6 h-6" />
+            </button>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,6 +63,9 @@ export function AppLayout() {
               </div>
               <span className="text-lg font-semibold">Zenith Trader</span>
             </div>
+            <button aria-label="Open notifications" onClick={toggleNotificationPanel} className="text-slate-200">
+              <Bell className="w-6 h-6" />
+            </button>
           </div>
         </div>
 
@@ -71,6 +78,23 @@ export function AppLayout() {
       {/* Mobile Bottom Navigation */}
       <MobileNavBar />
 
+      {/* Mobile Side Menu */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={(o) => {
+        setIsMobileMenuOpen(o);
+        if (o) {
+          document.body.classList.add('lock-scroll');
+        } else {
+          document.body.classList.remove('lock-scroll');
+        }
+      }}>
+        <SheetContent side="left" className="w-[85vw] max-w-sm bg-slate-900/95 backdrop-blur-xl border-slate-700/50">
+          {/* Mobile menu content */}
+          {/* Lazy import yerine doğrudan import ettik */}
+          {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+          {/* @ts-ignore */}
+          <MobileMenu onNavigate={(path: string) => { setIsMobileMenuOpen(false); navigate(path); }} onClose={() => setIsMobileMenuOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
       {/* Notification Panel */}
       <Sheet open={isNotificationPanelOpen} onOpenChange={setIsNotificationPanelOpen}>
