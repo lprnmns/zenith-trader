@@ -56,11 +56,7 @@ export function AppLayout() {
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
+              <img src="/icon-192x192.png" alt="Zenith Trader logo" className="w-6 h-6 rounded-lg" />
               <span className="text-lg font-semibold">Zenith Trader</span>
             </div>
             <button aria-label="Open notifications" onClick={toggleNotificationPanel} className="text-slate-200">
