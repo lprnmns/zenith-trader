@@ -7,48 +7,54 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'icon-*.svg'],
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       workbox: {
         // Avoid SPA fallback for API paths (important for OAuth routes)
         navigateFallbackDenylist: [
           /^\/api\//
         ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}']
       },
       manifest: {
         name: 'Zenith Trader',
-        short_name: 'ZenithTrader',
+        short_name: 'Zenith',
         description: 'Copy successful crypto traders automatically',
-        theme_color: '#000000',
-        background_color: '#ffffff',
+        theme_color: '#10b981',
+        background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        categories: ['finance', 'productivity'],
         icons: [
           {
-            src: 'favicon.ico',
-            sizes: '64x64 32x32 24x24 16x16',
-            type: 'image/x-icon'
-          }
-        ]
-      },
-      workbox: {
-        // Avoid SPA fallback for API paths (important for OAuth routes)
-        navigateFallbackDenylist: [
-          /^\/api\//
-        ],
-        runtimeCaching: [
+            src: '/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
           {
-            urlPattern: /^https:\/\/api\.zerion\.io\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-              }
-            }
+            src: '/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: '/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
