@@ -8,7 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icon-*.svg'],
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'pwa-144x144.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png'
+      ],
       devOptions: {
         enabled: true,
         type: 'module'
@@ -33,28 +39,33 @@ export default defineConfig({
         categories: ['finance', 'productivity'],
         icons: [
           {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
+            src: 'pwa-144x144.png',
+            sizes: '144x144',
+            type: 'image/png'
           },
           {
-            src: '/icon-192x192.png',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
+            type: 'image/png'
           },
           {
-            src: '/icon-512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
+            type: 'image/png'
           },
           {
-            src: '/icon-512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: 'screenshots/desktop-dashboard.png',
+            sizes: '1920x1080',
+            type: 'image/png',
+            form_factor: 'wide'
           }
         ]
       }

@@ -9,92 +9,79 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "tr",
-  "dir": "ltr",
   "categories": ["finance", "business", "productivity"],
   "icons": [
     {
       "src": "/icon-72x72.svg",
       "sizes": "72x72",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-96x96.svg",
       "sizes": "96x96",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-128x128.svg",
       "sizes": "128x128",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-144x144.svg",
       "sizes": "144x144",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-152x152.svg",
       "sizes": "152x152",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-192x192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-384x384.svg",
       "sizes": "384x384",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icon-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
     {
-      "name": "Wallet Analysis",
-      "short_name": "Analyze",
+      "name": "Wallet Explorer",
+      "short_name": "Explorer",
       "description": "Analyze blockchain wallets",
-      "url": "/wallet/analyze",
+      "url": "/explorer",
       "icons": [
         {
-          "src": "/icon-96x96.svg",
-          "sizes": "96x96"
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
       "name": "Copy Trading",
-      "short_name": "Copy",
-      "description": "Copy trading dashboard",
-      "url": "/copy-trading",
+      "short_name": "Trading",
+      "description": "Copy trading management",
+      "url": "/admin/copy-trading",
       "icons": [
         {
-          "src": "/icon-96x96.svg",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Notifications",
-      "short_name": "Alerts",
-      "description": "View notifications",
-      "url": "/notifications",
-      "icons": [
-        {
-          "src": "/icon-96x96.svg",
-          "sizes": "96x96"
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
         }
       ]
     }
@@ -104,30 +91,18 @@
       "src": "/screenshot-wide.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Zenith Trader Dashboard"
+      "form_factor": "wide"
     },
     {
       "src": "/screenshot-narrow.png",
       "sizes": "750x1334",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Zenith Trader Mobile"
+      "form_factor": "narrow"
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
-  "handle_links": "preferred",
-  "protocol_handlers": [
-    {
-      "protocol": "web+zenith",
-      "url": "/?wallet=%s"
-    }
-  ]
+  }
 }

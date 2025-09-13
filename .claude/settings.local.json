@@ -41,7 +41,9 @@
       "Bash(docker:*)",
       "Bash(chmod:*)",
       "Bash(./validate-docker-setup.sh:*)",
-      "Bash(Start-Sleep -Seconds 30)"
+      "Bash(Start-Sleep -Seconds 30)",
+      "Read(//c/Users/manas/Downloads/**)",
+      "Bash(azureuser@kkunotbot-vm:~$ docker exec -it zenithtrader_app sh)"
     ],
     "deny": [],
     "ask": []

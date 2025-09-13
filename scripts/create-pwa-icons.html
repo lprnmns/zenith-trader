@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        canvas {
+            border: 1px solid #333;
+            margin: 5px;
+            background: white;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        button:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <h1>Zenith Trader PWA Icon Generator</h1>
+    <p>Click the button below to generate PNG icons, then right-click each canvas and save as PNG.</p>
+    
+    <button onclick="generateIcons()">Generate Icons</button>
+    
+    <div id="icons" class="container"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateIcons() {
+            const container = document.getElementById('icons');
+            container.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#10b981');
+                gradient.addColorStop(1, '#3b82f6');
+                
+                // Draw rounded rectangle background
+                const radius = size * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(radius, 0);
+                ctx.lineTo(size - radius, 0);
+                ctx.quadraticCurveTo(size, 0, size, radius);
+                ctx.lineTo(size, size - radius);
+                ctx.quadraticCurveTo(size, size, size - radius, size);
+                ctx.lineTo(radius, size);
+                ctx.quadraticCurveTo(0, size, 0, size - radius);
+                ctx.lineTo(0, radius);
+                ctx.quadraticCurveTo(0, 0, radius, 0);
+                ctx.closePath();
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Draw lightning bolt (Zap icon)
+                ctx.fillStyle = 'white';
+                ctx.globalAlpha = 0.95;
+                ctx.beginPath();
+                
+                // Scale the lightning bolt based on icon size
+                const scale = size / 100;
+                ctx.moveTo(size * 0.6, size * 0.25);
+                ctx.lineTo(size * 0.35, size * 0.55);
+                ctx.lineTo(size * 0.5, size * 0.55);
+                ctx.lineTo(size * 0.4, size * 0.75);
+                ctx.lineTo(size * 0.65, size * 0.45);
+                ctx.lineTo(size * 0.5, size * 0.45);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Add label
+                const label = document.createElement('div');
+                label.textContent = `icon-${size}x${size}.png`;
+                label.style.textAlign = 'center';
+                label.style.marginBottom = '10px';
+                
+                const wrapper = document.createElement('div');
+                wrapper.appendChild(label);
+                wrapper.appendChild(canvas);
+                
+                container.appendChild(wrapper);
+            });
+            
+            alert('Icons generated! Right-click each canvas and select "Save image as..." to save as PNG files.');
+        }
+    </script>
+</body>
+</html>

@@ -1,24 +1,90 @@
 // src/services/zerionService.js
 const axios = require('axios');
 const config = require('../config');
+const ZerionKeyPool = require('../utils/zerionKeyPool');
 
-const apiClient = axios.create({
-  baseURL: 'https://api.zerion.io/v1',
-  headers: {
-    accept: 'application/json',
-    authorization: `Basic ${Buffer.from((config.zerionApiKey || process.env.ZERION_API_KEY || '') + ':', 'utf8').toString('base64')}`,
-    'Cache-Control': 'no-cache',
-    Pragma: 'no-cache',
-  },
-  timeout: 15000,
+// Build a rotating key pool from env/config (prefer multi-key env)
+const keyPool = new ZerionKeyPool(
+  process.env.ZERION_API_KEYS || config.zerionApiKey || process.env.ZERION_API_KEY || '',
+  {
+    cooldownMs: process.env.ZERION_KEY_COOLDOWN_MS,
+    notify: process.env.ZERION_NOTIFY_ON_THROTTLE,
+    notifyCooldownMs: process.env.ZERION_NOTIFY_COOLDOWN_MS,
+  }
+);
+
+function makeClient(activeKey) {
+  return axios.create({
+    baseURL: 'https://api.zerion.io/v1',
+    headers: {
+      accept: 'application/json',
+      authorization: `Basic ${Buffer.from((activeKey || '') + ':', 'utf8').toString('base64')}`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+    timeout: 20000,
+  });
+}
+
+let activeKeyInfo = keyPool.getActiveKey() || { id: -1, key: '' };
+let apiClient = makeClient(activeKeyInfo.key);
+
+// Add request interceptor to add timestamp and refresh key if needed
+apiClient.interceptors.request.use((cfg) => {
+  cfg.params = cfg.params || {};
+  cfg.params._t = Date.now();
+  return cfg;
 });
 
-// Add request interceptor to add timestamp
-apiClient.interceptors.request.use((config) => {
-	config.params = config.params || {};
-	config.params._t = Date.now();
-	return config;
-});
+// Helper to retry once with a rotated key when throttled
+async function requestWithRotation(method, url, options = {}) {
+  try {
+    // Respect global cooldown: try only if cooldown elapsed
+    if (keyPool.inGlobalCooldown() && !keyPool.readyForGlobalRetry()) {
+      const e = new Error('Global cooldown active for Zerion keys');
+      e.code = 'ZERION_GLOBAL_COOLDOWN';
+      throw e;
+    }
+    if (keyPool.readyForGlobalRetry()) {
+      keyPool.clearGlobalCooldown({ notify: true });
+    }
+    return await apiClient.request({ method, url, ...options });
+  } catch (err) {
+    const status = err?.response?.status;
+    const detail = err?.response?.data?.errors?.[0]?.detail || err?.message;
+    if (status === 429 || /throttled/i.test(detail || '')) {
+      if (activeKeyInfo && typeof activeKeyInfo.id === 'number') {
+        keyPool.markThrottle(activeKeyInfo.id, { detail });
+      }
+      const next = keyPool.getActiveKey();
+      if (next) {
+        activeKeyInfo = next;
+        apiClient = makeClient(next.key);
+        return await apiClient.request({ method, url, ...options });
+      } else {
+        // All keys throttled: start global cooldown (1h default)
+        keyPool.startGlobalCooldown({ message: 'All keys throttled (429). Pausing requests.' });
+      }
+    } else if (status === 401 || /unauthorized/i.test(detail || '')) {
+      if (activeKeyInfo && typeof activeKeyInfo.id === 'number') {
+        keyPool.markInvalid(activeKeyInfo.id, { detail });
+      }
+      const next = keyPool.getActiveKey();
+      if (next && next.key !== activeKeyInfo.key) {
+        activeKeyInfo = next;
+        apiClient = makeClient(next.key);
+        return await apiClient.request({ method, url, ...options });
+      } else {
+        // No valid key left -> start global cooldown
+        keyPool.startGlobalCooldown({ message: 'All keys invalid or unavailable (401). Pausing requests.' });
+      }
+    } else if (err?.code === 'ZERION_GLOBAL_COOLDOWN') {
+      // extend cooldown window on accidental retries
+      keyPool.extendGlobalCooldown();
+    }
+    throw err;
+  }
+}
 
 /**
  * Bir cüzdanın PnL önizlemesini, Zerion'un Portföy API'sinden alır.
@@ -27,7 +93,7 @@ apiClient.interceptors.request.use((config) => {
  */
 async function getPerformancePreview(address) {
   try {
-    const response = await apiClient.get(`/wallets/${address}/portfolio`, { params: { currency: 'usd' } });
+    const response = await requestWithRotation('get', `/wallets/${address}/portfolio`, { params: { currency: 'usd' } });
     const attr = response?.data?.data?.attributes || {};
     const ch = attr.changes || {};
 
@@ -202,7 +268,7 @@ async function getWalletTradesPage(address, cursor, operationTypes = ['trade']) 
       'page[size]': 100,
     };
     if (cursor) params['page[after]'] = cursor;
-    const response = await apiClient.get(`/wallets/${address}/transactions`, { params });
+const response = await requestWithRotation('get', `/wallets/${address}/transactions`, { params });
     const items = response.data?.data || [];
     const trades = items.map((tx) => {
       const attr = tx.attributes || {};
@@ -302,27 +368,22 @@ async function getWalletTrades(address, maxCount = 500, operationTypes = ['trade
  */
 async function getWalletTradeTransfers(address, maxCount = 500) {
   console.log(`[Zerion] getWalletTradeTransfers called for ${address} at ${new Date().toISOString()}`);
-  console.log(`[Zerion] API Key present: ${!!config.zerionApiKey}, First 10 chars: ${config.zerionApiKey?.substring(0, 10)}...`);
+  const poolCount = String(process.env.ZERION_API_KEYS || '').split(',').map(s=>s.trim()).filter(Boolean).length;
+  console.log(`[Zerion] Key pool active: ${poolCount} keys`);
   console.log(`[Zerion] Cache busting timestamp: ${Date.now()}`);
   
   const raw = await getWalletTrades(address, maxCount, ['trade','send','receive']);
   console.log(`[Zerion] Raw trades fetched: ${raw.length} items`);
   
-  // Fix incorrect year (2025 -> 2024) and log dates
+  // Log dates (no longer converting 2025 to 2024)
   if (raw.length > 0) {
-    raw.forEach(trade => {
-      if (trade.date && trade.date.includes('2025-')) {
-        trade.date = trade.date.replace('2025-', '2024-');
-      }
-    });
-    
     console.log(`[Zerion] First trade date: ${raw[0]?.date}`);
     console.log(`[Zerion] Last trade date: ${raw[raw.length - 1]?.date}`);
     console.log(`[Zerion] Sample trade:`, JSON.stringify(raw[0], null, 2).substring(0, 500));
   }
   
   let mapped = raw.map((t) => ({
-    date: t.date && t.date.includes('2025-') ? t.date.replace('2025-', '2024-') : t.date,
+    date: t.date,
     operationType: t.operationType || 'trade',
     inSymbol: t._raw?.inSymbol || null,
     outSymbol: t._raw?.outSymbol || null,
@@ -344,7 +405,7 @@ async function getWalletTradeTransfers(address, maxCount = 500) {
   async function getPage(address, cursor) {
     const params = { currency: 'usd', 'page[size]': 100 };
     if (cursor) params['page[after]'] = cursor;
-    const response = await apiClient.get(`/wallets/${address}/transactions`, { params });
+const response = await requestWithRotation('get', `/wallets/${address}/transactions`, { params });
     const items = response.data?.data || [];
     const recs = items.map((tx) => {
       const attr = tx.attributes || {};
@@ -381,6 +442,24 @@ module.exports = { getPerformancePreview, getNewTradesForSignal, getWalletTrades
 /**
  * Fetch fungible prices by symbol list in one request. Returns Map(symbolUpper -> price)
  */
+// Simple TTL cache for prices
+const PRICE_TTL_MS = Number(process.env.PRICE_TTL_MS || 90000);
+const priceCache = new Map(); // key: SYMBOL -> { value:number, ts:number }
+function cacheGet(sym) {
+  const k = String(sym || '').toUpperCase();
+  const hit = priceCache.get(k);
+  if (!hit) return undefined;
+  if (Date.now() - hit.ts > PRICE_TTL_MS) {
+    priceCache.delete(k);
+    return undefined;
+  }
+  return hit.value;
+}
+function cacheSet(sym, val) {
+  const k = String(sym || '').toUpperCase();
+  priceCache.set(k, { value: Number(val), ts: Date.now() });
+}
+
 async function getPricesForSymbols(symbols = []) {
   const list = Array.from(new Set((symbols || []).filter(Boolean).map((s) => String(s).toUpperCase())));
   if (list.length === 0) return new Map();
@@ -389,9 +468,15 @@ async function getPricesForSymbols(symbols = []) {
     console.log(`[Zerion] getPricesForSymbols at ${new Date().toISOString()}:`, list.join(','));
     // Query per symbol to ensure match; filter[query] doesn't support comma-joined lists reliably
     const requests = list.map(async (sym) => {
+      // Try cache first
+      const cached = cacheGet(sym);
+      if (typeof cached === 'number' && cached > 0) {
+        out.set(sym, cached);
+        return;
+      }
       try {
         // Note: timestamp already added via interceptor
-        const resp = await apiClient.get('/fungibles', { 
+        const resp = await requestWithRotation('get', '/fungibles', { 
           params: { 
             currency: 'usd', 
             'filter[query]': sym
@@ -403,6 +488,7 @@ async function getPricesForSymbols(symbols = []) {
         const price = best?.attributes?.price?.value;
         if (typeof price === 'number') {
           out.set(sym, Number(price));
+          cacheSet(sym, price);
           console.log(`[Zerion] Price for ${sym}: $${price}`);
         } else {
           console.warn('[Zerion] No price in fungibles item for symbol', sym);
@@ -413,6 +499,20 @@ async function getPricesForSymbols(symbols = []) {
     });
     await Promise.all(requests);
     console.log('[Zerion] symbol->price resolved:', Object.fromEntries(out));
+
+    // Fallback to Coingecko if Zerion did not return prices
+    if (out.size === 0) {
+      console.warn('[Zerion] Falling back to Coingecko for prices of:', list.join(','));
+      try {
+        const cg = await getPricesFromCoingecko(list);
+        if (cg && cg.size > 0) {
+          cg.forEach((v, k) => out.set(k, v));
+          console.log('[Coingecko] Fallback symbol->price resolved:', Object.fromEntries(out));
+        }
+      } catch (e) {
+        console.warn('[Coingecko] fallback failed:', e.message);
+      }
+    }
   } catch (error) {
     console.error('[Zerion] prices fetch failed:', error.response?.data || error.message);
   }
@@ -496,9 +596,15 @@ module.exports.getPnLSet = getPnLSet;
  * Fallback: Fetch prices from Coingecko for a subset of common symbols.
  * Returns Map(symbolUpper -> price)
  */
+let CG_BACKOFF_UNTIL = 0;
+
 async function getPricesFromCoingecko(symbols = []) {
   const list = Array.from(new Set((symbols || []).filter(Boolean).map((s) => String(s).toUpperCase())));
   if (list.length === 0) return new Map();
+  // Respect global backoff to avoid repeated 429s
+  if (CG_BACKOFF_UNTIL && Date.now() < CG_BACKOFF_UNTIL) {
+    return new Map();
+  }
   const symbolToId = {
     ETH: 'ethereum',
     WETH: 'weth',
@@ -540,7 +646,13 @@ async function getPricesFromCoingecko(symbols = []) {
     console.log('[Coingecko] symbol->price resolved:', Object.fromEntries(out));
     return out;
   } catch (error) {
-    console.warn('[Coingecko] price fetch failed:', error.message);
+    if (error?.response?.status === 429) {
+      // Backoff 5 minutes on rate limit
+      CG_BACKOFF_UNTIL = Date.now() + 5 * 60 * 1000;
+      console.warn('[Coingecko] 429 rate limited. Backing off for 5 minutes.');
+    } else {
+      console.warn('[Coingecko] price fetch failed:', error.message);
+    }
     return new Map();
   }
 }
@@ -692,18 +804,37 @@ module.exports.getWalletsByTokenHolding = getWalletsByTokenHolding;
  */
 async function getWalletTotalValueUsd(address) {
   try {
+    // 1) Preview üzerinden hızlı değer
     const preview = await getPerformancePreview(address);
-    if (preview && typeof preview.totalValueUsd === 'number') return preview.totalValueUsd;
+    if (preview && typeof preview.totalValueUsd === 'number' && preview.totalValueUsd > 0) {
+      return Number(preview.totalValueUsd);
+    }
+
+    // 2) Portföy endpoint'inden tüm alanları dene
     const response = await apiClient.get(`/wallets/${address}/portfolio`, { params: { currency: 'usd' } });
     const attr = response?.data?.data?.attributes || {};
-    return Number(
-      attr.total_value_usd ??
-      attr.total?.value ??
-      attr.total?.portfolio_value_usd ??
-      attr.net_usd ??
-      attr.total?.net_usd ??
-      0
-    );
+
+    let total =
+      Number(attr.total_value_usd ?? 0) ||
+      Number(attr.total?.value ?? 0) ||
+      Number(attr.total?.portfolio_value_usd ?? 0) ||
+      Number(attr.net_usd ?? 0) ||
+      Number(attr.total?.net_usd ?? 0) || 0;
+
+    // 3) Eğer 0 ise dağılım alanlarını topla
+    const sumVals = (obj) => Object.values(obj || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+    if (total <= 0) {
+      const byType = attr.positions_distribution_by_type || {};
+      const sumByType = sumVals(byType);
+      if (sumByType > 0) total = sumByType;
+    }
+    if (total <= 0) {
+      const byChain = attr.positions_distribution_by_chain || {};
+      const sumByChain = sumVals(byChain);
+      if (sumByChain > 0) total = sumByChain;
+    }
+
+    return Number(total || 0);
   } catch (error) {
     console.error(`[Zerion] ${address} için portföy değeri alınamadı:`, error.response?.data || error.message);
     return 0;
@@ -857,4 +988,20 @@ function calculatePositions(trades) {
 
 module.exports.calculatePnLForPeriod = calculatePnLForPeriod;
 
+// Compute PnL percentages (1d/7d/30d/365d) using ledger/trade method
+async function getLedgerPnLSet(address) {
+  const [d1, d7, d30, d365] = await Promise.all([
+    calculatePnLForPeriod(address, 1),
+    calculatePnLForPeriod(address, 7),
+    calculatePnLForPeriod(address, 30),
+    calculatePnLForPeriod(address, 365),
+  ]);
+  return {
+    p1d: Number(d1?.pnlPercentage || 0),
+    p7d: Number(d7?.pnlPercentage || 0),
+    p30d: Number(d30?.pnlPercentage || 0),
+    p365d: Number(d365?.pnlPercentage || 0),
+  };
+}
 
+module.exports.getLedgerPnLSet = getLedgerPnLSet;

@@ -164,32 +164,47 @@ router.get('/explorer/suggested-wallets', async (req, res) => {
     }
 
     // Enhance wallets with real-time totals from Zerion (best-effort) and fill missing PnL (1/7/30d)
+    const THRESH_MS = 24 * 60 * 60 * 1000; // 24h
     const enhancedWallets = await Promise.all(
       wallets.map(async (wallet) => {
         try {
-          const preview = await zerionService.getPerformancePreview(wallet.address);
-          const totalValueUsd = preview?.totalValueUsd ?? wallet.totalValue ?? 0;
+          let totalValueUsd = Number(wallet.totalValue || 0);
+          let p1d = Number(wallet.pnlPercent1d || 0);
+          let p7d = Number(wallet.pnlPercent7d || 0);
+          let p30d = Number(wallet.pnlPercent30d || 0);
+          let p365d = Number(wallet.pnlPercent365d || 0);
+          const lastAt = wallet.lastAnalyzedAt ? new Date(wallet.lastAnalyzedAt).getTime() : 0;
+          const stale = Date.now() - lastAt > THRESH_MS;
 
-          const pnls = await zerionService.getPnLSet(wallet.address);
-          const p1d = Number(pnls?.p1d ?? 0);
-          const p7d = Number(pnls?.p7d ?? 0);
-          const p30d = Number(pnls?.p30d ?? 0);
-          const p365d = Number(pnls?.p365d ?? 0);
+          // Recompute only if stale
+          if (stale) {
+            const preview = await zerionService.getPerformancePreview(wallet.address);
+            let tv = preview?.totalValueUsd ?? undefined;
+            if (!tv || Number(tv) === 0) {
+              tv = await zerionService.getWalletTotalValueUsd(wallet.address);
+            }
+            totalValueUsd = Number(tv || wallet.totalValue || 0);
 
-          // Persist back (non-blocking)
-          try {
-            await prisma.suggestedWallet.update({
-              where: { id: wallet.id },
-              data: {
-                pnlPercent1d: p1d,
-                pnlPercent7d: p7d,
-                pnlPercent30d: p30d,
-                pnlPercent365d: p365d,
-                totalValue: Number(totalValueUsd) || 0,
-                lastAnalyzedAt: new Date()
-              }
-            });
-          } catch (_) {}
+            const pnls = await zerionService.getLedgerPnLSet(wallet.address);
+            p1d = Number(pnls?.p1d ?? 0);
+            p7d = Number(pnls?.p7d ?? 0);
+            p30d = Number(pnls?.p30d ?? 0);
+            p365d = Number(pnls?.p365d ?? 0);
+
+            try {
+              await prisma.suggestedWallet.update({
+                where: { id: wallet.id },
+                data: {
+                  pnlPercent1d: p1d,
+                  pnlPercent7d: p7d,
+                  pnlPercent30d: p30d,
+                  pnlPercent365d: p365d,
+                  totalValue: Number(totalValueUsd) || 0,
+                  lastAnalyzedAt: new Date()
+                }
+              });
+            } catch (_) {}
+          }
 
           return {
             ...wallet,
@@ -198,7 +213,7 @@ router.get('/explorer/suggested-wallets', async (req, res) => {
             pnlPercent7d: p7d,
             pnlPercent30d: p30d,
             pnlPercent365d: p365d,
-            lastAnalyzedAt: new Date().toISOString()
+            lastAnalyzedAt: (stale ? new Date() : new Date(wallet.lastAnalyzedAt || Date.now())).toISOString()
           };
         } catch (error) {
           return {
