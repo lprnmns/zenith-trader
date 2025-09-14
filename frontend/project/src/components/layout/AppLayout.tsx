@@ -61,7 +61,7 @@ export function AppLayout() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <span className="text-lg font-semibold">Zenith Trader</span>
+              <span className="text-lg font-semibold text-white">Zenith Trader</span>
             </div>
             <button aria-label="Open notifications" onClick={toggleNotificationPanel} className="text-slate-200">
               <Bell className="w-6 h-6" />
