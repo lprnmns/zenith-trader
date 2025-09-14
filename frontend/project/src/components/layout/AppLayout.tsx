@@ -63,7 +63,7 @@ export function AppLayout() {
               </div>
               <span className="text-lg font-semibold text-white">Zenith Trader</span>
             </div>
-            <button aria-label="Open notifications" onClick={toggleNotificationPanel} className="text-slate-200">
+            <button aria-label="Open notifications" onClick={() => navigate('/notifications')} className="text-slate-200">
               <Bell className="w-6 h-6" />
             </button>
           </div>
