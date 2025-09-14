@@ -45,3 +45,36 @@ export type Notification = {
   metadata?: Record<string, unknown>;
   created_at: string;
 };
+
+export type TransferEvent = {
+  chain: string; // 'ethereum' | 'arbitrum' | ...
+  direction: 'in' | 'out';
+  address: string; // counterparty address
+  asset_id: string;
+  amount: string;
+  tx_hash: string;
+  occurred_at: string;
+};
+
+export type BridgeEvent = {
+  bridge: string; // socket | rango | gateway
+  src_chain: string;
+  dst_chain: string;
+  asset_id: string;
+  amount: string;
+  from: string;
+  to: string;
+  src_tx: string;
+  dst_tx?: string;
+  occurred_at: string;
+};
+
+export type LendingEvent = {
+  type: 'deposit' | 'withdraw' | 'borrow' | 'repay';
+  chain_id: number;
+  asset_id: string;
+  amount: string;
+  aToken_id?: string;
+  tx_hash: string;
+  occurred_at: string;
+};

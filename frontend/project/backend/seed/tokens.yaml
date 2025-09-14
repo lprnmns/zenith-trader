@@ -34,6 +34,16 @@ chains:
         decimals: 6
         tags: [stable_variant]
         maps_to: "USDT"
+      - address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        symbol: "USDC.e"
+        decimals: 6
+        tags: [stable_variant]
+        maps_to: "USDC"
+      - address: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+        symbol: "WETH"
+        decimals: 18
+        tags: [wrapped, cex_mappable]
+        maps_to: "ETH"
   - id: 43114
     name: avalanche
     stables: [USDT, USDC]

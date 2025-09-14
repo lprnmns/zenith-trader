@@ -87,11 +87,13 @@ app.get('/v1/registry/normalize_symbol', (req, res) => {
 });
 
 // Stub endpoint for classification to unblock wiring; real adapters will fill this
+// Example body: { chain_id, tx_hash, swaps: [...], transfers: [...], bridges: [...], lending: [...] }
 app.post('/v1/classify', (req, res) => {
-  const { chain_id, tx_hash } = req.body || {};
+  const { chain_id, tx_hash, swaps = [], transfers = [], bridges = [], lending = [] } = req.body || {};
   if (!chain_id || !tx_hash) return res.status(400).json({ error: 'chain_id and tx_hash required' });
-  const events: CanonicalSwap[] = [];
-  return res.json({ events });
+  // Coalesce swaps for the tx
+  // In a real pipeline, adapters decode a tx and provide raw swaps; here we just echo inputs
+  return res.json({ swaps, transfers, bridges, lending });
 });
 
 app.listen(PORT, () => {
