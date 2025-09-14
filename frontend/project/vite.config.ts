@@ -11,9 +11,9 @@ export default defineConfig({
       includeAssets: [
         'favicon.ico',
         'apple-touch-icon.png',
-        'pwa-144x144.png',
-        'pwa-192x192.png',
-        'pwa-512x512.png'
+        'icon-144x144.png',
+        'icon-192x192.png',
+        'icon-512x512.png'
       ],
       devOptions: {
         enabled: true,
@@ -39,25 +39,19 @@ export default defineConfig({
         categories: ['finance', 'productivity'],
         icons: [
           {
-            src: 'pwa-144x144.png',
+            src: 'icon-144x144.png',
             sizes: '144x144',
             type: 'image/png'
           },
           {
-            src: 'pwa-192x192.png',
+            src: 'icon-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icon-512x512.png',
             sizes: '512x512',
             type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
           }
         ],
         screenshots: [
