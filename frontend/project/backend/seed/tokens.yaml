@@ -1,0 +1,44 @@
+chains:
+  - id: 1
+    name: ethereum
+    stables: [USDT, USDC]
+    tokens:
+      - address: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        symbol: "USDT"
+        decimals: 6
+        tags: [stable, cex_mappable]
+      - address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        symbol: "WETH"
+        decimals: 18
+        tags: [wrapped, cex_mappable]
+        maps_to: "ETH"
+      - address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        symbol: "WBTC"
+        decimals: 8
+        tags: [wrapped, cex_mappable]
+        maps_to: "BTC"
+      - address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        symbol: "ETH"
+        decimals: 18
+        tags: [native, cex_mappable]
+      - address: "AAVE:aEthUSDT"
+        symbol: "aEthUSDT"
+        decimals: 6
+        tags: [atoken]
+  - id: 42161
+    name: arbitrum
+    stables: [USDT, USDC]
+    tokens:
+      - address: "USDT0"
+        symbol: "USDT0"
+        decimals: 6
+        tags: [stable_variant]
+        maps_to: "USDT"
+  - id: 43114
+    name: avalanche
+    stables: [USDT, USDC]
+    tokens:
+      - address: "AVAX:native"
+        symbol: "AVAX"
+        decimals: 18
+        tags: [native, cex_mappable]

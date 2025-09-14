@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  token-registry:
+    build:
+      context: ./backend
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - REGISTRY_SEED=/app/seed/tokens.yaml
+    volumes:
+      - ./backend/seed:/app/seed:ro
