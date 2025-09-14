@@ -36,7 +36,9 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ onNavigate, onClose }) =
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-slate-700/50">
         <div className="flex items-center gap-2">
-          <img src="/icon-192x192.png" alt="Zenith Trader logo" className="w-7 h-7 rounded-md" />
+          <div className="w-7 h-7 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-md flex items-center justify-center">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
           <span className="text-base font-semibold">Zenith Trader</span>
         </div>
       </div>

@@ -54,7 +54,9 @@ export function LoginPage() {
       <Card className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border-slate-700/50 shadow-2xl">
         <CardHeader className="text-center pb-8">
           <div className="flex justify-center items-center gap-2 mb-4">
-            <img src="/icon-192x192.png" alt="Zenith Trader logo" className="w-10 h-10 rounded-xl" />
+            <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
               Zenith Trader
             </h1>
