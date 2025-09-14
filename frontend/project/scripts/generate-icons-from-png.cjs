@@ -15,8 +15,9 @@ const { createCanvas, loadImage } = require('canvas');
 const outDir = path.join(__dirname, '..', 'public');
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-const sizesAny = [48, 72, 96, 144, 192, 512];
+const sizesAny = [16, 32, 48, 72, 96, 144, 192, 512];
 const sizesMaskable = [192, 512];
+const appleTouchSize = 180;
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -89,8 +90,15 @@ async function main() {
 
   // Standard icons (purpose: any)
   for (const sz of sizesAny) {
+    const filename = sz <= 32 ? `icon-${sz}x${sz}.png` : `icon-${sz}x${sz}.png`;
     const buf = drawContain(img, sz, { padRatio: 0 });
-    writeFileSafe(path.join(outDir, `icon-${sz}x${sz}.png`), buf);
+    writeFileSafe(path.join(outDir, filename), buf);
+  }
+
+  // Apple touch icon (180x180)
+  {
+    const buf = drawContain(img, appleTouchSize, { padRatio: 0 });
+    writeFileSafe(path.join(outDir, `apple-touch-icon.png`), buf);
   }
 
   // Maskable icons (with safe area padding ~10%)
