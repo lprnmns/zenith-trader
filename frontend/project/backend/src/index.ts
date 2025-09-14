@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { z } from 'zod';
+import { CanonicalAsset, RegistryEntry, CanonicalSwap } from './types.js';
 
 const app = express();
 app.use(express.json());
@@ -14,7 +15,7 @@ app.use(morgan('dev'));
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8081;
 const SEED = process.env.REGISTRY_SEED || path.join(process.cwd(), 'seed', 'tokens.yaml');
 
-// Types
+// Seed types
 const TokenSchema = z.object({
   address: z.string(),
   symbol: z.string(),
@@ -31,19 +32,6 @@ const ChainSchema = z.object({
 const SeedSchema = z.object({
   chains: z.array(ChainSchema),
 });
-
-export type CanonicalAsset = {
-  asset_id: string; // e.g., BTC, ETH, USDT
-  symbol: string;
-  cex_symbol: string | null;
-  tags: string[];
-};
-
-export type RegistryEntry = {
-  chain_id: number;
-  address: string; // normalized key
-  asset: CanonicalAsset;
-};
 
 // In-memory registry
 const REGISTRY = new Map<string, RegistryEntry>(); // key: `${chain_id}:${address_lower}`
@@ -73,6 +61,13 @@ function loadSeed(file: string) {
 
 loadSeed(SEED);
 
+// Helpers
+function normalizeSymbol(symbol: string): string {
+  const s = symbol.toUpperCase();
+  if (s === 'USDT0' || s === 'USDT.E') return 'USDT';
+  return s;
+}
+
 // Routes
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -88,9 +83,15 @@ app.get('/v1/registry/resolve', (req, res) => {
 app.get('/v1/registry/normalize_symbol', (req, res) => {
   const symbol = String(req.query.symbol || '').toUpperCase();
   if (!symbol) return res.status(400).json({ error: 'symbol required' });
-  // Simple synonyms for now
-  const normalized = symbol === 'USDT0' ? 'USDT' : symbol;
-  res.json({ input: symbol, normalized });
+  res.json({ input: symbol, normalized: normalizeSymbol(symbol) });
+});
+
+// Stub endpoint for classification to unblock wiring; real adapters will fill this
+app.post('/v1/classify', (req, res) => {
+  const { chain_id, tx_hash } = req.body || {};
+  if (!chain_id || !tx_hash) return res.status(400).json({ error: 'chain_id and tx_hash required' });
+  const events: CanonicalSwap[] = [];
+  return res.json({ events });
 });
 
 app.listen(PORT, () => {

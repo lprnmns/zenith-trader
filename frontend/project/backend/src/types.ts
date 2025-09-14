@@ -1,0 +1,47 @@
+export type CanonicalAsset = {
+  asset_id: string; // canonical id e.g., BTC, ETH, USDT
+  symbol: string;   // chain-local symbol e.g., WBTC, WETH, USDT0
+  cex_symbol: string | null; // e.g., BTC, ETH, USDT
+  tags: string[];   // stable|wrapped|restaked|atoken|native|...
+};
+
+export type RegistryEntry = {
+  chain_id: number;
+  address: string; // normalized key
+  asset: CanonicalAsset;
+};
+
+export type CanonicalSwapIO = { asset_id: string; amount: string };
+
+export type CanonicalSwap = {
+  chain_id: number;
+  tx_hash: string;
+  protocol: string; // uniswap, 0x, odos, 1inch
+  route?: string[];
+  inputs: CanonicalSwapIO[];
+  outputs: CanonicalSwapIO[];
+  price_usd?: number;
+  block_time: string; // ISO
+};
+
+export type LedgerEntry = {
+  idempotency_key: string;
+  pair: string; // e.g., BTC/USDT
+  side: 'buy' | 'sell';
+  qty: number; // base quantity
+  quote_qty: number; // quote amount
+  chain_id: number;
+  tx_hash: string;
+  occurred_at: string;
+  classifier_version: string;
+};
+
+export type Notification = {
+  key: string; // idempotency key for notification
+  type: string; // BRIDGE, CEX_DEPOSIT, TRADE, etc.
+  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  title: string;
+  body: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+};

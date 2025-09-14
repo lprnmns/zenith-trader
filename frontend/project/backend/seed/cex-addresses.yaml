@@ -1,0 +1,10 @@
+exchanges:
+  ethereum:
+    binance:
+      - "0x28C6c06298d514Db089934071355E5743bf21d60" # Binance 14
+      - "0x564286362092D8e7936f0549571a803B203aAceD" # Binance 8
+    okx:
+      - "0x3f5CE5FBFe3E9af3971dD833D26BA9b5C936f0bE" # OKX cold
+  arbitrum:
+    binance:
+      - "0x3f5CE5FBFe3E9af3971dD833D26BA9b5C936f0bE"
