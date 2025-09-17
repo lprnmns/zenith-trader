@@ -128,14 +128,44 @@ class NotificationService {
     return results;
   }
 
-  // Broadcast to all users with subscriptions
+  // Broadcast to all active push subscriptions (PushSubscription table)
   async sendBroadcastNotification(payload) {
     try {
-      const subs = await prisma.userSubscription.findMany({});
+      const subs = await prisma.pushSubscription.findMany({ where: { isActive: true } });
       if (!subs || subs.length === 0) return 0;
-      const ids = subs.map(s => s.userId);
-      const results = await this.sendBulkNotification(ids, payload);
-      return results.filter(r => r.success).length;
+
+      let successCount = 0;
+      for (const sub of subs) {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth }
+        };
+        const body = JSON.stringify({
+          title: payload.title,
+          body: payload.body,
+          icon: '/pwa-192x192.png',
+          badge: '/pwa-96x96.svg',
+          data: payload.data || {},
+          actions: payload.actions || [],
+          requireInteraction: !!payload.requireInteraction
+        });
+        try {
+          await webpush.sendNotification(pushSubscription, body);
+          successCount++;
+          // update lastUsed
+          await prisma.pushSubscription.update({ where: { id: sub.id }, data: { lastUsed: new Date() } });
+        } catch (err) {
+          console.error('[Broadcast] push error for', sub.endpoint, err.statusCode, err.message);
+          if (err.statusCode === 410) {
+            // mark inactive
+            await prisma.pushSubscription.update({ where: { id: sub.id }, data: { isActive: false } });
+          }
+        }
+        // light pacing
+        await new Promise(r => setTimeout(r, 20));
+      }
+      console.log(`[Broadcast] sent to ${successCount}/${subs.length}`);
+      return successCount;
     } catch (e) {
       console.error('Broadcast error', e);
       return 0;
@@ -353,9 +383,9 @@ class NotificationService {
   // Count subscriptions (for stats)
   async getSubscriptionCounts() {
     try {
-      const total = await prisma.userSubscription.count();
-      const usersWithSub = await prisma.userSubscription.count();
-      return { total, usersWithSub };
+      const total = await prisma.pushSubscription.count({ where: { isActive: true } });
+      const usersWithSub = await prisma.pushSubscription.groupBy({ by: ['userId'], where: { isActive: true } });
+      return { total, usersWithSub: usersWithSub.length };
     } catch (e) {
       return { total: 0, usersWithSub: 0 };
     }
