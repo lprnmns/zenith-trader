@@ -50,7 +50,8 @@ class CopyTradingEngine {
       const initialized = await this.copyTradingService.initialize({
         apiKey: apiKey,
         secretKey: secretKey,
-        passphrase: passphrase
+        passphrase: passphrase,
+        demoMode: (process.env.OKX_DEMO_MODE === '1' || String(process.env.OKX_DEMO_MODE || '').toLowerCase() === 'true')
       });
 
       if (!initialized) {
@@ -158,6 +159,8 @@ class CopyTradingEngine {
              token: signal.token,
              percentage: signal.percentage,
              amount: signal.amount,
+             units: signal.units,
+             price: signal.price,
              timestamp: signal.timestamp
            });
          }
@@ -251,12 +254,14 @@ class CopyTradingEngine {
           const result = await this.copyTradingService.processPositionSignal(signal, okxBalance);
 
           // Sonucu database'e kaydet
+          const firstOrderId = Array.isArray(result?.okxOrderIds) && result.okxOrderIds.length > 0 ? result.okxOrderIds[0] : null;
           await this.prisma.copyTrade.create({
             data: {
               signalId: savedSignal.id,
-              okxOrderId: result.success ? result.orderId : null,
+              okxOrderId: firstOrderId,
               status: result.success ? 'SUCCESS' : 'FAILED',
-              executedAt: result.success ? new Date() : null
+              executedAt: result.success ? new Date() : null,
+              metadata: result || {}
             }
           });
 

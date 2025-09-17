@@ -131,7 +131,26 @@ class NotificationService {
   // Wallet hareketi bildirimi gönder
   async sendWalletMovementNotification(walletAddress, movement) {
     try {
-      // Bu wallet'ı takip eden kullanıcıları bul
+      const formatter = require('./notificationFormatter');
+
+      // Enrich movement with walletAddress for formatting
+      const enriched = {
+        walletAddress,
+        type: movement.type,
+        direction: movement.type,
+        token: movement.token,
+        amountUsd: movement.amount ?? movement.amountUsd,
+        percentage: typeof movement.percentage === 'number' ? movement.percentage : undefined,
+        units: movement.units,
+        priceUsd: movement.price ?? movement.priceUsd,
+        fromToken: movement.fromToken,
+        toToken: movement.toToken,
+        timestamp: movement.timestamp
+      };
+
+      const { title, body } = formatter.formatWalletMovement(enriched);
+
+      // Find users following this wallet
       const notifications = await prisma.userWalletNotification.findMany({
         where: { 
           walletAddress,
@@ -151,37 +170,30 @@ class NotificationService {
       }
 
       const userIds = notifications.map(n => n.userId);
-      const activeUsers = notifications.filter(n => n.user.subscription);
 
-      // Bildirim içeriği
+      // Build notification payload
       const notification = {
-        title: `🔄 Wallet Hareketi: ${movement.type}`,
-        body: `${movement.token} ${movement.type === 'BUY' ? 'alındı' : 'satıldı'} - ${movement.percentage}% pozisyon`,
+        title,
+        body,
         data: {
           type: 'wallet_movement',
           walletAddress,
-          movement: {
-            type: movement.type,
-            token: movement.token,
-            percentage: movement.percentage,
-            amount: movement.amount,
-            timestamp: movement.timestamp
-          }
+          movement: enriched
         },
-        requireInteraction: true,
+        requireInteraction: false,
         actions: [
           {
             action: 'view_details',
-            title: 'Detayları Gör'
+            title: 'View details'
           },
           {
             action: 'dismiss',
-            title: 'Kapat'
+            title: 'Dismiss'
           }
         ]
       };
 
-      // Bildirimleri gönder
+      // Send
       const results = await this.sendBulkNotification(userIds, notification);
 
       return {
@@ -190,7 +202,7 @@ class NotificationService {
       };
 
     } catch (error) {
-      console.error('❌ Wallet hareketi bildirimi hatası:', error.message);
+      console.error('❌ Wallet movement notification error:', error.message);
       return { sent: 0, total: 0 };
     }
   }

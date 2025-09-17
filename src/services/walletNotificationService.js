@@ -266,17 +266,11 @@ class WalletNotificationService {
      * Format activity message for notification
      */
     formatActivityMessage(activity) {
-        const { type, token, amount, percentage, action } = activity;
-        
-        if (type === 'BUY') {
-            return `📈 Bought ${token}: ${percentage.toFixed(2)}% of portfolio`;
-        } else if (type === 'SELL') {
-            return `📉 Sold ${token}: ${percentage.toFixed(2)}% of portfolio`;
-        } else if (type === 'SWAP') {
-            return `🔄 Swapped ${activity.fromToken} to ${activity.toToken}`;
-        } else {
-            return `Activity detected on tracked wallet`;
-        }
+        // Delegate to shared formatter (EN only)
+        const formatter = require('./notificationFormatter');
+        const { title, body } = formatter.formatWalletMovement(activity);
+        // We only return body for compatibility with existing usage in this service
+        return body || 'Wallet activity detected';
     }
 }
 
