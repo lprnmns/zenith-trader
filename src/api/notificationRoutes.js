@@ -162,12 +162,13 @@ router.post('/broadcast', requireAuth, requireAdmin, async (req, res) => {
     };
 
     const successCount = await notificationService.sendBroadcastNotification(payload);
-    
+
+    const counts = await notificationService.getSubscriptionCounts();
     res.json({ 
       success: true, 
       message: `Broadcast sent to ${successCount} users`,
       successCount: successCount,
-      totalSubscriptions: notificationService.getSubscriptionCount()
+      totalSubscriptions: counts.total
     });
   } catch (error) {
     console.error('[API] Broadcast notification error:', error);
