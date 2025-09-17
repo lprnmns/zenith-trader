@@ -1,7 +1,7 @@
 // src/api/notificationRoutes.js
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const notificationService = require('../services/notificationService');
 const walletNotificationService = require('../services/walletNotificationService');
 
@@ -138,7 +138,7 @@ router.post('/unsubscribe', requireAuth, async (req, res) => {
  * POST /api/notifications/broadcast
  * Send broadcast notification to all users
  */
-router.post('/broadcast', async (req, res) => {
+router.post('/broadcast', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { title, message } = req.body;
     
@@ -212,11 +212,13 @@ router.get('/subscriptions', requireAuth, async (req, res) => {
  * GET /api/notifications/stats
  * Get notification statistics
  */
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
+    const counts = await notificationService.getSubscriptionCounts();
     res.json({ 
       success: true,
-      subscriptionCount: notificationService.getSubscriptionCount(),
+      subscriptionCount: counts.total,
+      counts,
       isConfigured: !!notificationService.getVapidPublicKey()
     });
   } catch (error) {

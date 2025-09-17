@@ -16,6 +16,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { StrategiesPage } from './pages/StrategiesPage';
 import { ExplorerPage } from './pages/ExplorerPage';
 import { NotificationsV2Page } from './pages/NotificationsV2Page';
+import AdminBroadcastPage from './pages/AdminBroadcastPage';
 import { OAuthSuccessPage } from './pages/OAuthSuccessPage';
 import { OAuthErrorPage } from './pages/OAuthErrorPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
@@ -149,12 +150,22 @@ function App() {
                   </ErrorBoundary>
                 } 
               />
-<Route 
+              <Route 
                 path="notifications" 
                 element={
                   <ErrorBoundary>
                     <ProtectedRoute>
                       <NotificationsV2Page />
+                    </ProtectedRoute>
+                  </ErrorBoundary>
+                } 
+              />
+              <Route 
+                path="admin/broadcast" 
+                element={
+                  <ErrorBoundary>
+                    <ProtectedRoute>
+                      <AdminBroadcastPage />
                     </ProtectedRoute>
                   </ErrorBoundary>
                 } 

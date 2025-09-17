@@ -68,11 +68,17 @@ export function Sidebar({ onNotificationClick }: SidebarProps) {
   }
 
   // Memoized navigation items - visible to all users
-  const navItems = React.useMemo(() => [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/strategies', icon: Target, label: 'My Strategies' },
-    { path: '/explorer', icon: Search, label: 'Wallet Explorer' },
-  ], [user?.role]);
+  const navItems = React.useMemo(() => {
+    const items = [
+      { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { path: '/strategies', icon: Target, label: 'My Strategies' },
+      { path: '/explorer', icon: Search, label: 'Wallet Explorer' },
+    ];
+    if (user?.role === 'ADMIN') {
+      items.push({ path: '/admin/broadcast', icon: Bell, label: 'Broadcast' });
+    }
+    return items;
+  }, [user?.role]);
 
   const handleLogout = useCallback(() => {
     logout();

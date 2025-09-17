@@ -119,13 +119,27 @@ class NotificationService {
       results.push({ userId, success });
       
       // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     const successCount = results.filter(r => r.success).length;
     console.log(`📊 Toplu bildirim sonucu: ${successCount}/${userIds.length} başarılı`);
     
     return results;
+  }
+
+  // Broadcast to all users with subscriptions
+  async sendBroadcastNotification(payload) {
+    try {
+      const subs = await prisma.userSubscription.findMany({});
+      if (!subs || subs.length === 0) return 0;
+      const ids = subs.map(s => s.userId);
+      const results = await this.sendBulkNotification(ids, payload);
+      return results.filter(r => r.success).length;
+    } catch (e) {
+      console.error('Broadcast error', e);
+      return 0;
+    }
   }
 
   // Wallet hareketi bildirimi gönder
@@ -334,6 +348,17 @@ class NotificationService {
   // VAPID public key'i al
   getVapidPublicKey() {
     return this.vapidKeys.publicKey;
+  }
+
+  // Count subscriptions (for stats)
+  async getSubscriptionCounts() {
+    try {
+      const total = await prisma.userSubscription.count();
+      const usersWithSub = await prisma.userSubscription.count();
+      return { total, usersWithSub };
+    } catch (e) {
+      return { total: 0, usersWithSub: 0 };
+    }
   }
 }
 
