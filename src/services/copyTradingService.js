@@ -1,5 +1,6 @@
 const OKXService = require('./okxService');
 const crypto = require('crypto');
+const tokenMappings = require('../config/tokenMappings');
 
 class CopyTradingService {
   constructor() {
@@ -8,16 +9,7 @@ class CopyTradingService {
     this.isInitialized = false;
   }
 
-  // Token adı eşleştirme sistemi
-  static TOKEN_MAPPING = {
-    'WBTC': 'BTC',
-    'WETH': 'ETH',
-    'MNT': 'MNT',
-    'AVAX': 'AVAX',
-    'ZRO': 'ZRO',
-    'RESOLV': 'RESOLV',
-    'FET': 'FET'
-  };
+  // Eski sabit eşleme kaldırıldı; merkezi tokenMappings kullanılacak
 
   // OKX client'ı başlat
   async initialize(okxConfig) {
@@ -63,7 +55,9 @@ class CopyTradingService {
 
   // Token adını OKX formatına çevir
   static getOKXTokenName(token) {
-    return CopyTradingService.TOKEN_MAPPING[token] || token;
+    if (!token) return token;
+    const mapped = tokenMappings.getOKXSymbol(String(token).toUpperCase());
+    return mapped || token;
   }
 
   // Bir sayının ondalık basamak sayısını string'den al
@@ -84,6 +78,35 @@ class CopyTradingService {
     const roundedAmount = Math.floor(amount / lotSize) * lotSize;
     
     return roundedAmount.toFixed(decimalPlaces);
+  }
+
+  // Yardımcı: enstrüman bul (SWAP öncelikli, SPOT fallback)
+  async getInstrument(instId) {
+    // Cache kullanımını koru
+    if (this.instrumentDetails.has(instId)) {
+      return this.instrumentDetails.get(instId);
+    }
+    try {
+      // Önce direkt SWAP sorgula
+      const swap = await this.okxClient.getInstruments('SWAP', instId);
+      const swapArr = Array.isArray(swap?.data) ? swap.data : (Array.isArray(swap) ? swap : []);
+      const foundSwap = swapArr.find(x => String(x.instId).toUpperCase() === String(instId).toUpperCase());
+      if (foundSwap) {
+        this.instrumentDetails.set(instId, foundSwap);
+        return foundSwap;
+      }
+    } catch (_) {}
+    try {
+      const spotId = instId.replace(/-SWAP$/i, '');
+      const spot = await this.okxClient.getInstruments('SPOT', spotId);
+      const spotArr = Array.isArray(spot?.data) ? spot.data : (Array.isArray(spot) ? spot : []);
+      const foundSpot = spotArr.find(x => String(x.instId).toUpperCase() === String(spotId).toUpperCase());
+      if (foundSpot) {
+        this.instrumentDetails.set(spotId, foundSpot);
+        return foundSpot;
+      }
+    } catch (_) {}
+    return null;
   }
 
   // OKX hesap bakiyesini al
@@ -150,6 +173,183 @@ class CopyTradingService {
     }
   }
 
+  // Yardımcı: pozisyonları al (SWAP)
+  async getPositions(instId) {
+    try {
+      const res = await this.okxClient.getPositions('SWAP', instId);
+      return Array.isArray(res) ? res : (res?.data || []);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Yardımcı: lot size yuvarlama ve decimal işlemleri mevcut
+
+  // Yardımcı: reduce-only kapatma (SWAP)
+  async reducePositionSwap(instId, posSide, usdToReduce) {
+    if (!usdToReduce || usdToReduce <= 0) return { reducedUsd: 0, reducedContracts: 0, last: null, ordId: null };
+    const instrument = await this.getInstrument(instId);
+    if (!instrument) return { reducedUsd: 0, reducedContracts: 0, last: null, ordId: null };
+    const ctVal = parseFloat(instrument.ctVal);
+    const lotSz = instrument.lotSz;
+
+    const ticker = await this.okxClient.getTicker(instId);
+    const last = parseFloat(ticker?.[0]?.last || 0);
+    if (!(last > 0)) return { reducedUsd: 0, reducedContracts: 0, last: null, ordId: null };
+
+    const positions = await this.getPositions(instId);
+    const pos = positions.find(p => String(p.instId).toUpperCase() === String(instId).toUpperCase() && p.posSide === posSide && parseFloat(p.pos) > 0);
+    if (!pos) return { reducedUsd: 0, reducedContracts: 0, last, ordId: null };
+
+    const availableContracts = parseFloat(pos.pos);
+    let targetContracts = usdToReduce / (ctVal * last);
+    targetContracts = parseFloat(CopyTradingService.roundToLotSize(targetContracts, lotSz));
+    const finalContracts = Math.min(Math.max(targetContracts, 0), availableContracts);
+    if (finalContracts <= 0) return { reducedUsd: 0, reducedContracts: 0, last, ordId: null };
+
+    const closeSide = posSide === 'long' ? 'sell' : 'buy';
+    const closeRes = await this.okxClient.submitOrder(
+      instId,
+      'isolated',
+      closeSide,
+      posSide,
+      'market',
+      String(finalContracts),
+      { reduceOnly: true }
+    );
+    const ordId = closeRes?.data?.[0]?.ordId || null;
+    const reducedUsd = finalContracts * ctVal * last;
+    return { reducedUsd, reducedContracts: finalContracts, last, ordId };
+  }
+
+  // Yardımcı: SWAP market açılış
+  async openSwapMarket(instId, side, posSide, targetUsd, leverage) {
+    const instrument = await this.getInstrument(instId);
+    if (!instrument) throw new Error(`Instrument not found: ${instId}`);
+    const ctVal = parseFloat(instrument.ctVal);
+    const lotSz = instrument.lotSz;
+    const minSz = parseFloat(instrument.minSz);
+
+    const ticker = await this.okxClient.getTicker(instId);
+    const last = parseFloat(ticker?.[0]?.last || 0);
+    if (!(last > 0)) throw new Error(`Price not available for ${instId}`);
+
+    let contracts = targetUsd / (ctVal * last);
+    const rounded = parseFloat(CopyTradingService.roundToLotSize(contracts, lotSz));
+    const finalContracts = Math.max(rounded, minSz);
+
+    // leverage ayarı (posSide bazlı)
+    try {
+      await this.okxClient.setLeverage(instId, String(leverage || 1), 'isolated', posSide);
+    } catch (_) {}
+
+    const orderRes = await this.okxClient.submitOrder(
+      instId,
+      'isolated',
+      side,
+      posSide,
+      'market',
+      String(finalContracts)
+    );
+    const ordId = orderRes?.data?.[0]?.ordId || null;
+    return { ordId, finalContracts, last };
+  }
+
+  // Yardımcı: SPOT market (cash)
+  async openSpotMarket(instId, side, targetUsd) {
+    const ticker = await this.okxClient.getTicker(instId);
+    const last = parseFloat(ticker?.[0]?.last || 0);
+    if (!(last > 0)) throw new Error(`Price not available for ${instId}`);
+
+    if (side === 'buy') {
+      const orderRes = await this.okxClient.submitOrder(
+        instId,
+        'cash',
+        'buy',
+        null,
+        'market',
+        String(targetUsd),
+        { tgtCcy: 'quote_ccy' }
+      );
+      const ordId = orderRes?.data?.[0]?.ordId || null;
+      return { ordId, finalSz: targetUsd, last };
+    } else {
+      // SELL: base miktarı
+      let baseSz = targetUsd / last;
+      const inst = await this.getInstrument(instId);
+      const lotSz = inst?.lotSz || '0.0001';
+      const minSz = parseFloat(inst?.minSz || '0');
+      baseSz = parseFloat(CopyTradingService.roundToLotSize(baseSz, lotSz));
+      baseSz = Math.max(baseSz, minSz);
+      const orderRes = await this.okxClient.submitOrder(
+        instId,
+        'cash',
+        'sell',
+        null,
+        'market',
+        String(baseSz)
+      );
+      const ordId = orderRes?.data?.[0]?.ordId || null;
+      return { ordId, finalSz: baseSz, last };
+    }
+  }
+
+  // Reduce-then-open akışı (SWAP öncelikli, SPOT fallback)
+  async reduceThenOpen(symbol, side, usdSize, leverage, minUsd) {
+    const instId = `${symbol}-USDT-SWAP`;
+    const results = [];
+
+    let instrument = await this.getInstrument(instId);
+    if (!instrument) {
+      // SWAP yok, SPOT deneyelim
+      const spotId = `${symbol}-USDT`;
+      try {
+        if (side === 'buy') {
+          const spotRes = await this.openSpotMarket(spotId, 'buy', usdSize);
+          results.push({ type: 'SPOT_BUY', instId: spotId, ordId: spotRes.ordId, amount: spotRes.finalSz, last: spotRes.last });
+        } else {
+          const spotRes = await this.openSpotMarket(spotId, 'sell', usdSize);
+          results.push({ type: 'SPOT_SELL', instId: spotId, ordId: spotRes.ordId, amount: spotRes.finalSz, last: spotRes.last });
+        }
+        return results;
+      } catch (e) {
+        throw new Error(`SPOT fallback failed for ${spotId}: ${e.message}`);
+      }
+    }
+
+    // SWAP yolu
+    const ticker = await this.okxClient.getTicker(instId);
+    const last = parseFloat(ticker?.[0]?.last || 0);
+    if (!(last > 0)) throw new Error(`Price not available for ${instId}`);
+
+    let remainingUsd = usdSize;
+    if (side === 'sell') {
+      // önce long kapat
+      const red = await this.reducePositionSwap(instId, 'long', remainingUsd);
+      if (red.reducedUsd > 0) {
+        results.push({ type: 'REDUCE_LONG', instId, ordId: red.ordId, amountUsd: red.reducedUsd, contracts: red.reducedContracts, last });
+        remainingUsd = Math.max(0, remainingUsd - red.reducedUsd);
+      }
+      if (remainingUsd >= (minUsd || 0)) {
+        const opened = await this.openSwapMarket(instId, 'sell', 'short', remainingUsd, 1);
+        results.push({ type: 'OPEN_SHORT', instId, ordId: opened.ordId, contracts: opened.finalContracts, last: opened.last });
+      }
+    } else if (side === 'buy') {
+      // önce short kapat
+      const red = await this.reducePositionSwap(instId, 'short', remainingUsd);
+      if (red.reducedUsd > 0) {
+        results.push({ type: 'REDUCE_SHORT', instId, ordId: red.ordId, amountUsd: red.reducedUsd, contracts: red.reducedContracts, last });
+        remainingUsd = Math.max(0, remainingUsd - red.reducedUsd);
+      }
+      if (remainingUsd >= (minUsd || 0)) {
+        const opened = await this.openSwapMarket(instId, 'buy', 'long', remainingUsd, leverage || 3);
+        results.push({ type: 'OPEN_LONG', instId, ordId: opened.ordId, contracts: opened.finalContracts, last: opened.last });
+      }
+    }
+
+    return results;
+  }
+
   // Pozisyon sinyali işle
   async processPositionSignal(signal, okxBalance) {
     if (!this.isInitialized) {
@@ -157,34 +357,24 @@ class CopyTradingService {
     }
 
     const okxToken = CopyTradingService.getOKXTokenName(signal.token);
-    const instId = `${okxToken}-USDT-SWAP`;
-
-    // Enstrüman bilgilerini kontrol et
-    const instrument = this.instrumentDetails.get(instId);
-    if (!instrument) {
-      throw new Error(`'${instId}' enstrümanı OKX listesinde bulunamadı`);
+    if (!okxToken) {
+      return { success: false, error: `Token ignored or unmapped: ${signal.token}` };
     }
 
-    const lotSize = instrument.lotSz;
-    const ctVal = parseFloat(instrument.ctVal);
-    const minSz = parseFloat(instrument.minSz);
-
-    // Pozisyon büyüklüğünü kopyalanan risk yüzdesine göre hesapla
-    const ourPositionSize = (okxBalance * signal.percentage) / 100;
-    const leverage = signal.type === 'BUY' ? 3 : 1;
-    const leveragedPositionSize = ourPositionSize * leverage;
+    // Pozisyon USD büyüklüğü (yüzde modunda bakiye * yüzde)
+    const usdSize = (okxBalance * (Number(signal.percentage || 0) / 100));
+    const leverage = signal.signalType === 'BUY' || signal.type === 'BUY' ? 3 : 1;
 
     try {
-      // 1. Fiyat bilgisini al
-      console.log(`📊 ${okxToken} fiyatı alınıyor...`);
-      const tickerResponse = await this.okxClient.getTicker(instId);
-      const currentPrice = parseFloat(tickerResponse?.[0]?.last || 0);
+      const minUsd = 0.1; // sistem içi alt sınır
+      const results = await this.reduceThenOpen(okxToken, (signal.signalType || signal.type).toLowerCase() === 'sell' ? 'sell' : 'buy', usdSize, leverage, minUsd);
 
-      if (currentPrice <= 0) {
-        throw new Error('Fiyat bilgisi alınamadı');
-      }
-
-      // 2. Detaylı debug bilgileri
+      return {
+        success: true,
+        results,
+        totalOrders: results.length,
+        okxOrderIds: results.map(r => r.ordId).filter(Boolean)
+      };
       console.log(`🔍 DETAYLI HESAPLAMA DEBUG:`);
       console.log(`   Temel pozisyon: $${ourPositionSize.toFixed(2)}`);
       console.log(`   Kaldıraç: ${leverage}x`);
@@ -247,7 +437,6 @@ class CopyTradingService {
         throw new Error(`Minimum emir miktarı altında. Gereken: $${minUSDAmount.toFixed(2)}, Sizin: $${leveragedPositionSize.toFixed(2)}`);
       }
 
-      const results = [];
 
       // 5. İşlem türüne göre emirleri gönder
       if (signal.type === 'BUY') {
@@ -390,17 +579,7 @@ class CopyTradingService {
         }
       }
 
-      console.log(`\n🎉 TÜM İŞLEMLER BAŞARILI!`);
-      results.forEach((result, index) => {
-        console.log(`   ${index + 1}. ${result.type}: ${result.orderId} (${result.positionSide})`);
-      });
-
-      return {
-        success: true,
-        results,
-        totalOrders: results.length
-      };
-
+      
     } catch (error) {
       console.error(`❌ İşlem hatası:`, error.message);
       return {
