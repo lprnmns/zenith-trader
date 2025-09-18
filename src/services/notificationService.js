@@ -390,6 +390,44 @@ class NotificationService {
       return { total: 0, usersWithSub: 0 };
     }
   }
+
+  // Send to a specific user's active push subscriptions
+  async sendToUserPush(userId, payload) {
+    try {
+      const subs = await prisma.pushSubscription.findMany({ where: { userId: Number(userId), isActive: true } });
+      if (!subs || subs.length === 0) return 0;
+      let success = 0;
+      for (const sub of subs) {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth }
+        };
+        const body = JSON.stringify({
+          title: payload.title || 'Test',
+          body: payload.body || 'Test notification',
+          icon: payload.icon || '/pwa-192x192.png',
+          badge: payload.badge || '/pwa-96x96.svg',
+          data: payload.data || {},
+          actions: payload.actions || [],
+          requireInteraction: !!payload.requireInteraction
+        });
+        try {
+          await webpush.sendNotification(pushSubscription, body);
+          success++;
+          await prisma.pushSubscription.update({ where: { id: sub.id }, data: { lastUsed: new Date() } });
+        } catch (err) {
+          if (err.statusCode === 410) {
+            await prisma.pushSubscription.update({ where: { id: sub.id }, data: { isActive: false } });
+          }
+        }
+        await new Promise(r => setTimeout(r, 20));
+      }
+      return success;
+    } catch (e) {
+      console.error('[Push] sendToUserPush error', e);
+      return 0;
+    }
+  }
 }
 
 module.exports = new NotificationService();

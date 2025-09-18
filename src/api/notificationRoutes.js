@@ -231,4 +231,22 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// Admin-only: send test push to a specific user
+router.post('/test-user', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { userId, title, body } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Missing userId' });
+    }
+    const count = await notificationService.sendToUserPush(userId, {
+      title: title || 'Test Notification',
+      body: body || 'Hello from admin'
+    });
+    res.json({ success: true, sent: count });
+  } catch (e) {
+    console.error('[API] Test user push error:', e);
+    res.status(500).json({ success: false, error: 'Failed to send test push' });
+  }
+});
+
 module.exports = router;
