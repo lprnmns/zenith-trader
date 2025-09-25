@@ -3,14 +3,14 @@
   "redirects": [
     {
       "source": "/api/auth/google",
-      "destination": "https://api.zenithtrader.alperenmanas.app/api/auth/google",
+      "destination": "http://80.225.234.85:3001/api/auth/google",
       "permanent": false
     }
   ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://api.zenithtrader.alperenmanas.app/api/$1"
+      "destination": "http://80.225.234.85:3001/api/$1"
     }
   ]
 }
