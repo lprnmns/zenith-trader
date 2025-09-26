@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://80.225.234.85:3001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
 });
 
 // Add auth token to requests
